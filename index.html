@@ -1,5 +1,19 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Calculator, Beaker, Droplets, Save, RefreshCw, Plus, Trash2, AlertCircle, ChevronRight, Database } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { 
+  Calculator, 
+  Database, 
+  Settings, 
+  ChevronDown, 
+  ChevronRight, 
+  Plus, 
+  Trash2, 
+  AlertCircle, 
+  CheckCircle2, 
+  Beaker,
+  TrendingUp,
+  DollarSign,
+  Menu
+} from 'lucide-react';
 
 // --- 类型定义 ---
 type Ingredient = {
@@ -9,7 +23,6 @@ type Ingredient = {
   fat: number;     // %
   ts: number;      // Total Solids %
   cost: number;    // RMB/kg
-  isDefault?: boolean;
 };
 
 type Additive = {
@@ -33,32 +46,27 @@ type SolverResult = {
 
 // --- 初始数据 ---
 const INITIAL_INGREDIENTS: Ingredient[] = [
-  { id: 'rm', name: '生牛乳 (Raw Milk)', protein: 3.2, fat: 3.8, ts: 12.0, cost: 4.5, isDefault: true },
-  { id: 'skim', name: '脱脂奶 (Skim Milk)', protein: 3.4, fat: 0.1, ts: 8.8, cost: 3.5, isDefault: true },
-  { id: 'water', name: 'RO水 (Water)', protein: 0, fat: 0, ts: 0, cost: 0.05, isDefault: true },
-  { id: 'cream', name: '稀奶油 (Cream 38%)', protein: 2.0, fat: 38.0, ts: 42.0, cost: 35.0, isDefault: true },
-  { id: 'butter', name: '无水奶油 (AMF)', protein: 0, fat: 99.8, ts: 99.9, cost: 60.0, isDefault: true },
-  { id: 'smp', name: '脱脂乳粉 (SMP)', protein: 34.0, fat: 1.0, ts: 96.0, cost: 25.0, isDefault: true },
-  { id: 'wpc80', name: '浓缩乳清蛋白 (WPC80)', protein: 80.0, fat: 6.0, ts: 95.0, cost: 70.0, isDefault: true },
-  { id: 'sugar', name: '白砂糖 (Sugar)', protein: 0, fat: 0, ts: 99.8, cost: 6.5, isDefault: true },
-  { id: 'stab', name: '稳定剂 (Stabilizer)', protein: 0, fat: 0, ts: 95.0, cost: 45.0, isDefault: true },
+  { id: 'rm', name: '生牛乳 (Raw Milk)', protein: 3.2, fat: 3.8, ts: 12.0, cost: 4.5 },
+  { id: 'skim', name: '脱脂奶 (Skim Milk)', protein: 3.4, fat: 0.1, ts: 8.8, cost: 3.5 },
+  { id: 'water', name: 'RO水 (Water)', protein: 0, fat: 0, ts: 0, cost: 0.05 },
+  { id: 'cream', name: '稀奶油 (Cream 38%)', protein: 2.0, fat: 38.0, ts: 42.0, cost: 35.0 },
+  { id: 'butter', name: '无水奶油 (AMF)', protein: 0, fat: 99.8, ts: 99.9, cost: 60.0 },
+  { id: 'smp', name: '脱脂乳粉 (SMP)', protein: 34.0, fat: 1.0, ts: 96.0, cost: 25.0 },
+  { id: 'wpc80', name: '浓缩乳清蛋白 (WPC80)', protein: 80.0, fat: 6.0, ts: 95.0, cost: 70.0 },
+  { id: 'sugar', name: '白砂糖 (Sugar)', protein: 0, fat: 0, ts: 99.8, cost: 6.5 },
+  { id: 'stab', name: '稳定剂 (Stabilizer)', protein: 0, fat: 0, ts: 95.0, cost: 45.0 },
 ];
 
-// --- 核心算法：三元方程求解器 ---
-// 使用克莱姆法则 (Cramer's Rule) 求解 Ax = B
-const solve3x3 = (
-  m: number[][], // Matrix 3x3 [Row][Col]
-  b: number[]    // Result Vector
-): number[] | null => {
+// --- 核心算法 ---
+const solve3x3 = (m: number[][], b: number[]): number[] | null => {
   const det = (m: number[][]) => 
     m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) -
     m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
     m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
 
   const D = det(m);
-  if (Math.abs(D) < 1e-9) return null; // 无解或无穷解
+  if (Math.abs(D) < 1e-9) return null;
 
-  // Replace columns for Dx, Dy, Dz
   const mx = m.map((row, i) => [b[i], row[1], row[2]]);
   const my = m.map((row, i) => [row[0], b[i], row[2]]);
   const mz = m.map((row, i) => [row[0], row[1], b[i]]);
@@ -66,35 +74,60 @@ const solve3x3 = (
   return [det(mx) / D, det(my) / D, det(mz) / D];
 };
 
+// --- UI 组件: 可折叠卡片 ---
+const SectionCard = ({ 
+  title, 
+  icon: Icon, 
+  children, 
+  isOpen = true,
+  className = ""
+}: { 
+  title: string, 
+  icon: any, 
+  children: React.ReactNode, 
+  isOpen?: boolean,
+  className?: string 
+}) => {
+  const [open, setOpen] = useState(isOpen);
+  return (
+    <div className={`bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden transition-all ${className}`}>
+      <button 
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between p-4 bg-slate-50/50 hover:bg-slate-50 active:bg-slate-100 transition-colors"
+      >
+        <div className="flex items-center gap-3 text-slate-700 font-bold">
+          <div className="p-2 bg-white rounded-lg shadow-sm text-blue-600">
+            <Icon size={18} />
+          </div>
+          {title}
+        </div>
+        {open ? <ChevronDown size={20} className="text-slate-400" /> : <ChevronRight size={20} className="text-slate-400" />}
+      </button>
+      {open && <div className="p-4 md:p-5 border-t border-slate-100 animate-in slide-in-from-top-2 duration-200">{children}</div>}
+    </div>
+  );
+};
+
 export default function DairyStandardizer() {
   // --- State ---
+  const [activeTab, setActiveTab] = useState<'calc' | 'db' | 'settings'>('calc');
   const [ingredients, setIngredients] = useState<Ingredient[]>(INITIAL_INGREDIENTS);
   
-  // 目标参数
-  const [targetMass, setTargetMass] = useState(1000); // kg
-  const [targetProtein, setTargetProtein] = useState(3.5); // %
-  const [targetFat, setTargetFat] = useState(3.8); // %
-
-  // 求解器选择
-  const [baseId, setBaseId] = useState('rm');   // 基料 (通常是奶或水)
-  const [fatId, setFatId] = useState('cream');  // 脂肪调节剂
-  const [proId, setProId] = useState('smp');    // 蛋白调节剂
-
-  // 固定添加物 (Pre-mix)
+  // Inputs
+  const [targetMass, setTargetMass] = useState(1000);
+  const [targetProtein, setTargetProtein] = useState(3.5);
+  const [targetFat, setTargetFat] = useState(3.8);
+  const [baseId, setBaseId] = useState('rm');
+  const [fatId, setFatId] = useState('cream');
+  const [proId, setProId] = useState('smp');
   const [additives, setAdditives] = useState<Additive[]>([]);
   
-  // 结果
+  // Output
   const [result, setResult] = useState<SolverResult | null>(null);
-  const [activeTab, setActiveTab] = useState<'solver' | 'database'>('solver');
 
-  // --- Logic ---
-  const handleSolve = () => {
-    // 1. 计算固定添加物的占用量
-    let usedMass = 0;
-    let usedProtein = 0;
-    let usedFat = 0;
-    let usedCost = 0;
-    let usedTSMass = 0;
+  // --- Solver Logic (Same as before) ---
+  useEffect(() => {
+    let usedMass = 0, usedProtein = 0, usedFat = 0, usedCost = 0, usedTSMass = 0;
 
     additives.forEach(add => {
       const ing = ingredients.find(i => i.id === add.ingredientId);
@@ -108,62 +141,43 @@ export default function DairyStandardizer() {
       }
     });
 
-    // 2. 计算剩余需要平衡的目标
     const remainingMass = targetMass - usedMass;
-    const remainingTargetProteinMass = (targetMass * targetProtein / 100) - usedProtein;
-    const remainingTargetFatMass = (targetMass * targetFat / 100) - usedFat;
+    const remTargetP = (targetMass * targetProtein / 100) - usedProtein;
+    const remTargetF = (targetMass * targetFat / 100) - usedFat;
 
     if (remainingMass <= 0) {
-      setResult({ success: false, amounts: {}, totalCost: 0, finalStats: { protein: 0, fat: 0, ts: 0, msnf: 0 }, error: "固定添加物已超过总质量" });
+      setResult({ success: false, amounts: {}, totalCost: 0, finalStats: { protein: 0, fat: 0, ts: 0, msnf: 0 }, error: "辅料占比过高" });
       return;
     }
 
-    // 3. 获取三种平衡原料的数据
     const base = ingredients.find(i => i.id === baseId)!;
     const fatSrc = ingredients.find(i => i.id === fatId)!;
     const proSrc = ingredients.find(i => i.id === proId)!;
-
-    // 4. 构建方程组
-    // x + y + z = remainingMass
-    // x*P1 + y*P2 + z*P3 = remainingTargetProteinMass
-    // x*F1 + y*F2 + z*F3 = remainingTargetFatMass
 
     const matrix = [
       [1, 1, 1],
       [base.protein/100, fatSrc.protein/100, proSrc.protein/100],
       [base.fat/100, fatSrc.fat/100, proSrc.fat/100]
     ];
-    const vector = [remainingMass, remainingTargetProteinMass, remainingTargetFatMass];
+    const vector = [remainingMass, remTargetP, remTargetF];
 
-    const solution = solve3x3(matrix, vector);
+    const sol = solve3x3(matrix, vector);
 
-    if (!solution || solution.some(val => val < -0.001)) {
-      // 允许极小的负数作为计算误差，但大的负数意味着不可行
-      setResult({ 
-        success: false, 
-        amounts: {}, 
-        totalCost: 0, 
-        finalStats: { protein: 0, fat: 0, ts: 0, msnf: 0 },
-        error: "无法通过当前原料组合达到目标。可能原因：\n1. 目标值过高，原料无法满足。\n2. 目标值过低，基料本身已超标。\n3. 尝试更换调节剂（例如用无水奶油代替稀奶油）。"
-      });
+    if (!sol || sol.some(val => val < -0.001)) {
+      setResult({ success: false, amounts: {}, totalCost: 0, finalStats: { protein: 0, fat: 0, ts: 0, msnf: 0 }, error: "无解" });
       return;
     }
 
-    // 5. 汇总结果
-    const [mBase, mFat, mPro] = solution;
+    const [mBase, mFat, mPro] = sol;
     const amounts: {[key:string]: number} = {};
-    
-    // 添加平衡剂
     amounts[baseId] = (amounts[baseId] || 0) + mBase;
     amounts[fatId] = (amounts[fatId] || 0) + mFat;
     amounts[proId] = (amounts[proId] || 0) + mPro;
 
-    // 添加固定物
     additives.forEach(add => {
       amounts[add.ingredientId] = (amounts[add.ingredientId] || 0) + ((add.amount / 100) * targetMass);
     });
 
-    // 计算最终统计
     let finalCost = usedCost + (mBase * base.cost) + (mFat * fatSrc.cost) + (mPro * proSrc.cost);
     let finalTSMass = usedTSMass + (mBase * base.ts/100) + (mFat * fatSrc.ts/100) + (mPro * proSrc.ts/100);
     
@@ -178,353 +192,303 @@ export default function DairyStandardizer() {
         msnf: ((finalTSMass / targetMass) * 100) - targetFat
       }
     });
-  };
-
-  // --- Handlers ---
-  const updateIngredient = (id: string, field: keyof Ingredient, value: number) => {
-    setIngredients(prev => prev.map(i => i.id === id ? { ...i, [field]: value } : i));
-  };
-
-  const addAdditive = () => {
-    setAdditives([...additives, { id: Date.now().toString(), ingredientId: 'sugar', amount: 0 }]);
-  };
-
-  const updateAdditive = (id: string, field: keyof Additive, value: any) => {
-    setAdditives(prev => prev.map(a => a.id === id ? { ...a, [field]: value } : a));
-  };
-
-  const removeAdditive = (id: string) => {
-    setAdditives(prev => prev.filter(a => a.id !== id));
-  };
-
-  // 每次输入变化自动计算
-  useEffect(() => {
-    handleSolve();
   }, [targetMass, targetProtein, targetFat, baseId, fatId, proId, additives, ingredients]);
 
-
-  // --- Components ---
-  
-  const IngredientSelect = ({ label, value, onChange, filterType }: { label: string, value: string, onChange: (val: string) => void, filterType?: string }) => (
-    <div className="mb-4">
-      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{label}</label>
-      <div className="relative">
-        <select 
-          value={value} 
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full bg-white border border-slate-300 text-slate-700 py-2 px-3 rounded shadow-sm focus:outline-none focus:border-blue-500 appearance-none"
-        >
-          {ingredients.map(ing => (
-            <option key={ing.id} value={ing.id}>
-              {ing.name} (P:{ing.protein}% F:{ing.fat}%)
-            </option>
-          ))}
-        </select>
-        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-500">
-          <ChevronRight size={16} className="rotate-90" />
-        </div>
-      </div>
-    </div>
-  );
+  // --- Helpers ---
+  const updateIng = (id: string, k: keyof Ingredient, v: number) => {
+    setIngredients(prev => prev.map(i => i.id === id ? { ...i, [k]: v } : i));
+  };
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans text-slate-800">
-      {/* Header */}
-      <header className="bg-blue-700 text-white p-4 shadow-lg">
-        <div className="max-w-6xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Beaker className="h-6 w-6" />
-            <h1 className="text-xl font-bold tracking-tight">DairyStandardizer <span className="opacity-70 text-sm font-normal ml-2">乳品配方计算机 Pro</span></h1>
+    <div className="flex flex-col h-screen bg-slate-100 text-slate-800 font-sans overflow-hidden">
+      
+      {/* 1. App Header */}
+      <header className="bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between shrink-0 z-20">
+        <div className="flex items-center gap-2">
+          <div className="bg-blue-600 text-white p-1.5 rounded-lg">
+            <Beaker size={20} />
           </div>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => setActiveTab('solver')}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${activeTab === 'solver' ? 'bg-white text-blue-700' : 'bg-blue-800 text-blue-200 hover:bg-blue-600'}`}
-            >
-              <Calculator size={14} className="inline mr-1" /> 配方设计
-            </button>
-            <button 
-              onClick={() => setActiveTab('database')}
-              className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${activeTab === 'database' ? 'bg-white text-blue-700' : 'bg-blue-800 text-blue-200 hover:bg-blue-600'}`}
-            >
-              <Database size={14} className="inline mr-1" /> 原料库
-            </button>
-          </div>
+          <h1 className="font-bold text-lg tracking-tight text-slate-800">Dairy<span className="text-blue-600">Std</span></h1>
         </div>
+        <div className="text-xs font-medium text-slate-500 bg-slate-100 px-2 py-1 rounded-full">v2.0 Mobile</div>
       </header>
 
-      <main className="max-w-6xl mx-auto p-4 md:p-6">
+      {/* 2. Scrollable Content Area */}
+      <main className="flex-1 overflow-y-auto scroll-smooth pb-32 md:pb-0 md:flex md:flex-row">
         
-        {activeTab === 'database' && (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h2 className="text-lg font-bold text-slate-700">原料成分数据库</h2>
-              <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">双击数值可修改</span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-slate-50 text-slate-500 uppercase font-bold">
-                  <tr>
-                    <th className="p-4">原料名称</th>
-                    <th className="p-4">蛋白 (%)</th>
-                    <th className="p-4">脂肪 (%)</th>
-                    <th className="p-4">总干物质 (%)</th>
-                    <th className="p-4">成本 (元/kg)</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {ingredients.map(ing => (
-                    <tr key={ing.id} className="hover:bg-blue-50 transition">
-                      <td className="p-4 font-medium text-slate-700">{ing.name}</td>
-                      <td className="p-4">
+        {/* VIEW: CALCULATOR */}
+        {activeTab === 'calc' && (
+          <div className="w-full max-w-5xl mx-auto md:grid md:grid-cols-12 md:gap-6 md:p-6 min-h-full">
+            
+            {/* Left Side: Inputs (Stacked Cards) */}
+            <div className="md:col-span-7 lg:col-span-6 p-4 space-y-4 pb-24 md:pb-0">
+              
+              <SectionCard title="目标设定 (Targets)" icon={TrendingUp}>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-xs font-bold text-slate-400 uppercase">总质量 (kg)</label>
+                    <input 
+                      type="number" 
+                      value={targetMass} 
+                      onChange={e => setTargetMass(parseFloat(e.target.value) || 0)}
+                      className="w-full mt-1 p-2 border border-slate-200 rounded-lg font-mono text-lg font-bold text-blue-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-bold text-slate-400 uppercase">蛋白 (%)</label>
+                      <input 
+                        type="number" step="0.1" value={targetProtein} 
+                        onChange={e => setTargetProtein(parseFloat(e.target.value) || 0)}
+                        className="w-full mt-1 p-2 border border-slate-200 rounded-lg font-mono font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-slate-400 uppercase">脂肪 (%)</label>
+                      <input 
+                        type="number" step="0.1" value={targetFat} 
+                        onChange={e => setTargetFat(parseFloat(e.target.value) || 0)}
+                        className="w-full mt-1 p-2 border border-slate-200 rounded-lg font-mono font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </SectionCard>
+
+              <SectionCard title="平衡体系 (Balancers)" icon={CheckCircle2}>
+                <div className="space-y-3 text-sm">
+                   <p className="text-slate-500 text-xs mb-2">选择三种原料自动平衡方程组：</p>
+                   {[
+                     { label: "基料 (体积)", val: baseId, set: setBaseId },
+                     { label: "脂肪来源", val: fatId, set: setFatId },
+                     { label: "蛋白来源", val: proId, set: setProId },
+                   ].map((item, idx) => (
+                     <div key={idx} className="bg-slate-50 p-2 rounded-lg border border-slate-100 flex flex-col">
+                        <label className="text-xs text-slate-400 font-bold mb-1">{item.label}</label>
+                        <select 
+                          value={item.val} 
+                          onChange={e => item.set(e.target.value)}
+                          className="bg-transparent font-medium text-slate-700 outline-none w-full"
+                        >
+                          {ingredients.map(ing => (
+                            <option key={ing.id} value={ing.id}>{ing.name}</option>
+                          ))}
+                        </select>
+                     </div>
+                   ))}
+                </div>
+              </SectionCard>
+
+              <SectionCard title={`固定辅料 ${additives.length > 0 ? `(${additives.length})` : ''}`} icon={Plus} isOpen={false}>
+                <div className="space-y-3">
+                  {additives.map(add => (
+                    <div key={add.id} className="flex items-center gap-2">
+                      <select 
+                        className="flex-1 text-sm p-2 bg-slate-50 rounded border border-slate-200"
+                        value={add.ingredientId}
+                        onChange={e => setAdditives(prev => prev.map(a => a.id === add.id ? {...a, ingredientId: e.target.value} : a))}
+                      >
+                        {ingredients.map(ing => <option key={ing.id} value={ing.id}>{ing.name}</option>)}
+                      </select>
+                      <div className="relative w-20">
                         <input 
                           type="number" 
-                          value={ing.protein} 
-                          onChange={(e) => updateIngredient(ing.id, 'protein', parseFloat(e.target.value))}
-                          className="w-20 bg-transparent border-b border-transparent hover:border-blue-300 focus:border-blue-500 focus:outline-none"
+                          className="w-full p-2 text-right text-sm bg-white border border-slate-200 rounded"
+                          value={add.amount}
+                          onChange={e => setAdditives(prev => prev.map(a => a.id === add.id ? {...a, amount: parseFloat(e.target.value) || 0} : a))}
                         />
-                      </td>
-                      <td className="p-4">
-                        <input 
-                          type="number" 
-                          value={ing.fat} 
-                          onChange={(e) => updateIngredient(ing.id, 'fat', parseFloat(e.target.value))}
-                          className="w-20 bg-transparent border-b border-transparent hover:border-blue-300 focus:border-blue-500 focus:outline-none"
-                        />
-                      </td>
-                      <td className="p-4">
-                        <input 
-                          type="number" 
-                          value={ing.ts} 
-                          onChange={(e) => updateIngredient(ing.id, 'ts', parseFloat(e.target.value))}
-                          className="w-20 bg-transparent border-b border-transparent hover:border-blue-300 focus:border-blue-500 focus:outline-none"
-                        />
-                      </td>
-                      <td className="p-4">
-                        <input 
-                          type="number" 
-                          value={ing.cost} 
-                          onChange={(e) => updateIngredient(ing.id, 'cost', parseFloat(e.target.value))}
-                          className="w-20 bg-transparent border-b border-transparent hover:border-blue-300 focus:border-blue-500 focus:outline-none"
-                        />
-                      </td>
-                    </tr>
+                        <span className="absolute right-6 top-2 text-xs text-slate-400">%</span>
+                      </div>
+                      <button 
+                        onClick={() => setAdditives(prev => prev.filter(a => a.id !== add.id))}
+                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                  <button 
+                    onClick={() => setAdditives([...additives, { id: Date.now().toString(), ingredientId: 'sugar', amount: 0 }])}
+                    className="w-full py-2 border-2 border-dashed border-slate-200 rounded-lg text-slate-400 text-sm font-medium hover:border-blue-300 hover:text-blue-500 transition-colors"
+                  >
+                    + 添加辅料
+                  </button>
+                </div>
+              </SectionCard>
+            </div>
+
+            {/* Right Side: Results (Desktop) / Hidden on Mobile (uses sticky footer instead) */}
+            <div className="hidden md:block md:col-span-5 lg:col-span-6 p-4 pl-0">
+              <div className="bg-white rounded-xl shadow border border-slate-200 h-full p-6 sticky top-4">
+                <h2 className="text-lg font-bold mb-6 flex items-center gap-2">
+                  <Calculator className="text-blue-600" /> 计算结果
+                </h2>
+                {result && result.success ? (
+                   <div className="space-y-6">
+                      <div className="grid grid-cols-2 gap-4">
+                         <div className="p-4 bg-blue-50 rounded-xl">
+                            <div className="text-xs text-blue-500 font-bold uppercase">总成本</div>
+                            <div className="text-2xl font-bold text-blue-900">¥{result.totalCost.toFixed(2)}</div>
+                            <div className="text-xs text-blue-400">{(result.totalCost / targetMass).toFixed(2)} 元/kg</div>
+                         </div>
+                         <div className="p-4 bg-green-50 rounded-xl">
+                            <div className="text-xs text-green-600 font-bold uppercase">总干物质 (TS)</div>
+                            <div className="text-2xl font-bold text-green-900">{result.finalStats.ts.toFixed(2)}%</div>
+                            <div className="text-xs text-green-500">MSNF: {result.finalStats.msnf.toFixed(2)}%</div>
+                         </div>
+                      </div>
+                      
+                      <div className="border rounded-lg overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="bg-slate-50 text-slate-500 font-bold">
+                            <tr>
+                              <th className="p-3 text-left">原料</th>
+                              <th className="p-3 text-right">比例</th>
+                              <th className="p-3 text-right">重量 (kg)</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-slate-100">
+                            {Object.entries(result.amounts)
+                              .sort(([,a], [,b]) => b-a)
+                              .map(([id, amt]) => {
+                                if(amt < 0.01) return null;
+                                const ing = ingredients.find(i => i.id === id);
+                                return (
+                                  <tr key={id}>
+                                    <td className="p-3">{ing?.name}</td>
+                                    <td className="p-3 text-right font-mono text-slate-600">{((amt/targetMass)*100).toFixed(2)}%</td>
+                                    <td className="p-3 text-right font-mono font-bold">{amt.toFixed(1)}</td>
+                                  </tr>
+                                )
+                              })}
+                          </tbody>
+                        </table>
+                      </div>
+                   </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+                    <AlertCircle size={48} className="mb-4 opacity-50" />
+                    <p>{result?.error || "输入数据以开始计算"}</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
 
-        {activeTab === 'solver' && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Left Column: Inputs */}
-            <div className="lg:col-span-1 space-y-6">
-              
-              {/* 1. Target Settings */}
-              <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <div className="flex items-center gap-2 mb-4 text-blue-700">
-                  <div className="p-1.5 bg-blue-100 rounded-md">
-                    <Droplets size={18} />
-                  </div>
-                  <h2 className="font-bold">1. 设定目标</h2>
-                </div>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">投料总量 (Total Mass)</label>
-                    <div className="flex items-center">
-                      <input 
-                        type="number" 
-                        value={targetMass} 
-                        onChange={(e) => setTargetMass(parseFloat(e.target.value))}
-                        className="flex-1 border border-slate-300 rounded-l px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                      />
-                      <span className="bg-slate-100 border border-l-0 border-slate-300 px-3 py-2 rounded-r text-slate-600 text-sm">kg</span>
+        {/* VIEW: DATABASE */}
+        {activeTab === 'db' && (
+          <div className="p-4 w-full max-w-4xl mx-auto">
+            <h2 className="text-xl font-bold mb-4 px-2">原料库管理</h2>
+            <div className="space-y-3">
+               {ingredients.map(ing => (
+                 <div key={ing.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                    <div className="flex-1">
+                       <div className="font-bold text-slate-800">{ing.name}</div>
+                       <div className="text-xs text-slate-400 mt-1">P:{ing.protein}%  F:{ing.fat}%  TS:{ing.ts}%</div>
                     </div>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">目标蛋白</label>
-                      <div className="flex items-center">
-                        <input 
-                          type="number" 
-                          step="0.1"
-                          value={targetProtein} 
-                          onChange={(e) => setTargetProtein(parseFloat(e.target.value))}
-                          className="w-full border border-slate-300 rounded-l px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        />
-                        <span className="bg-slate-100 border border-l-0 border-slate-300 px-2 py-2 rounded-r text-slate-600 text-sm">%</span>
-                      </div>
+                    <div className="flex items-center gap-3 w-full sm:w-auto">
+                       <div className="flex flex-col w-1/3 sm:w-24">
+                          <label className="text-[10px] text-slate-400 uppercase font-bold">蛋白 %</label>
+                          <input 
+                            type="number" className="border border-slate-200 rounded px-2 py-1 text-sm font-mono"
+                            value={ing.protein} onChange={e => updateIng(ing.id, 'protein', parseFloat(e.target.value))}
+                          />
+                       </div>
+                       <div className="flex flex-col w-1/3 sm:w-24">
+                          <label className="text-[10px] text-slate-400 uppercase font-bold">脂肪 %</label>
+                          <input 
+                            type="number" className="border border-slate-200 rounded px-2 py-1 text-sm font-mono"
+                            value={ing.fat} onChange={e => updateIng(ing.id, 'fat', parseFloat(e.target.value))}
+                          />
+                       </div>
+                       <div className="flex flex-col w-1/3 sm:w-24">
+                          <label className="text-[10px] text-slate-400 uppercase font-bold">成本 ¥</label>
+                          <input 
+                            type="number" className="border border-slate-200 rounded px-2 py-1 text-sm font-mono"
+                            value={ing.cost} onChange={e => updateIng(ing.id, 'cost', parseFloat(e.target.value))}
+                          />
+                       </div>
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-500 uppercase mb-1">目标脂肪</label>
-                      <div className="flex items-center">
-                        <input 
-                          type="number" 
-                          step="0.1"
-                          value={targetFat} 
-                          onChange={(e) => setTargetFat(parseFloat(e.target.value))}
-                          className="w-full border border-slate-300 rounded-l px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                        />
-                        <span className="bg-slate-100 border border-l-0 border-slate-300 px-2 py-2 rounded-r text-slate-600 text-sm">%</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 2. Additives */}
-              <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <div className="flex justify-between items-center mb-4">
-                  <div className="flex items-center gap-2 text-purple-700">
-                    <div className="p-1.5 bg-purple-100 rounded-md">
-                      <Plus size={18} />
-                    </div>
-                    <h2 className="font-bold">2. 固定添加 (辅料)</h2>
-                  </div>
-                  <button onClick={addAdditive} className="text-xs bg-purple-50 text-purple-700 px-2 py-1 rounded hover:bg-purple-100">+ 添加</button>
-                </div>
-                
-                <div className="space-y-3">
-                  {additives.length === 0 && <p className="text-sm text-slate-400 italic">无固定添加物 (如糖、稳定剂)</p>}
-                  {additives.map(add => (
-                    <div key={add.id} className="flex items-center gap-2 bg-slate-50 p-2 rounded border border-slate-100">
-                      <select 
-                        value={add.ingredientId}
-                        onChange={(e) => updateAdditive(add.id, 'ingredientId', e.target.value)}
-                        className="flex-1 text-sm bg-transparent focus:outline-none"
-                      >
-                        {ingredients.map(ing => <option key={ing.id} value={ing.id}>{ing.name}</option>)}
-                      </select>
-                      <input 
-                        type="number" 
-                        placeholder="%"
-                        value={add.amount}
-                        onChange={(e) => updateAdditive(add.id, 'amount', parseFloat(e.target.value))}
-                        className="w-16 text-sm bg-white border border-slate-200 rounded px-1 py-1 text-right"
-                      />
-                      <span className="text-xs text-slate-500">%</span>
-                      <button onClick={() => removeAdditive(add.id)} className="text-slate-400 hover:text-red-500"><Trash2 size={14} /></button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* 3. Standardization Base */}
-              <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
-                <div className="flex items-center gap-2 mb-4 text-indigo-700">
-                  <div className="p-1.5 bg-indigo-100 rounded-md">
-                    <RefreshCw size={18} />
-                  </div>
-                  <h2 className="font-bold">3. 平衡体系 (Solver)</h2>
-                </div>
-                <p className="text-xs text-slate-500 mb-4">选择三种原料，系统将自动调整它们的比例以精准命中目标蛋白和脂肪。</p>
-                
-                <IngredientSelect label="基料 (Base - 体积填充)" value={baseId} onChange={setBaseId} />
-                <IngredientSelect label="脂肪来源 (Fat Source)" value={fatId} onChange={setFatId} />
-                <IngredientSelect label="蛋白来源 (Protein Source)" value={proId} onChange={setProId} />
-              </div>
-
-            </div>
-
-            {/* Right Column: Results */}
-            <div className="lg:col-span-2">
-              <div className="bg-white h-full rounded-xl shadow-md border border-slate-200 flex flex-col">
-                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
-                  <h2 className="text-lg font-bold text-slate-800">配方计算结果</h2>
-                  {result?.success && (
-                    <span className="text-green-600 text-sm font-medium bg-green-50 px-3 py-1 rounded-full border border-green-100">
-                      ✅ 计算成功
-                    </span>
-                  )}
-                </div>
-
-                <div className="p-6 flex-1">
-                  {!result?.success ? (
-                    <div className="h-full flex flex-col items-center justify-center text-slate-400 p-8 text-center">
-                      <AlertCircle size={48} className="mb-4 text-slate-300" />
-                      <p className="text-lg font-medium text-slate-600 mb-2">计算失败</p>
-                      <p className="whitespace-pre-line max-w-md">{result?.error || "请调整原料或目标参数"}</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-8">
-                      {/* Summary Cards */}
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                          <div className="text-xs text-blue-600 uppercase font-bold mb-1">成品蛋白</div>
-                          <div className="text-2xl font-bold text-blue-900">{result.finalStats.protein.toFixed(2)}%</div>
-                        </div>
-                        <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-100">
-                          <div className="text-xs text-yellow-600 uppercase font-bold mb-1">成品脂肪</div>
-                          <div className="text-2xl font-bold text-yellow-900">{result.finalStats.fat.toFixed(2)}%</div>
-                        </div>
-                        <div className="p-4 bg-slate-50 rounded-lg border border-slate-100">
-                          <div className="text-xs text-slate-500 uppercase font-bold mb-1">总干物质 (TS)</div>
-                          <div className="text-2xl font-bold text-slate-700">{result.finalStats.ts.toFixed(2)}%</div>
-                        </div>
-                        <div className="p-4 bg-green-50 rounded-lg border border-green-100">
-                          <div className="text-xs text-green-600 uppercase font-bold mb-1">预估成本</div>
-                          <div className="text-xl font-bold text-green-900">¥{(result.totalCost / targetMass).toFixed(2)}<span className="text-xs font-normal text-green-700">/kg</span></div>
-                        </div>
-                      </div>
-
-                      {/* Recipe Table */}
-                      <div>
-                        <h3 className="font-bold text-slate-700 mb-4 flex items-center gap-2">
-                          <Save size={18} className="text-slate-400" />
-                          生产配料表
-                        </h3>
-                        <div className="overflow-hidden rounded-lg border border-slate-200">
-                          <table className="w-full text-left text-sm">
-                            <thead className="bg-slate-100 text-slate-600 font-bold uppercase">
-                              <tr>
-                                <th className="p-3 w-1/3">原料名称</th>
-                                <th className="p-3 text-right">配比 (%)</th>
-                                <th className="p-3 text-right">投料量 (kg)</th>
-                                <th className="p-3 text-right hidden sm:table-cell">单项成本 (元)</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100">
-                              {Object.entries(result.amounts)
-                                .sort(([, a], [, b]) => b - a) // Sort by amount desc
-                                .map(([id, amount]) => {
-                                  const ing = ingredients.find(i => i.id === id);
-                                  if (!ing || amount < 0.001) return null;
-                                  const percent = (amount / targetMass) * 100;
-                                  const cost = amount * ing.cost;
-                                  return (
-                                    <tr key={id} className="hover:bg-slate-50">
-                                      <td className="p-3 font-medium text-slate-700">{ing.name}</td>
-                                      <td className="p-3 text-right font-mono text-blue-600">{percent.toFixed(3)}%</td>
-                                      <td className="p-3 text-right font-mono font-bold">{amount.toFixed(2)}</td>
-                                      <td className="p-3 text-right text-slate-500 hidden sm:table-cell">¥{cost.toFixed(1)}</td>
-                                    </tr>
-                                  );
-                                })}
-                              <tr className="bg-slate-50 font-bold text-slate-800">
-                                <td className="p-3">合计</td>
-                                <td className="p-3 text-right">100.00%</td>
-                                <td className="p-3 text-right">{targetMass.toFixed(2)} kg</td>
-                                <td className="p-3 text-right hidden sm:table-cell">¥{result.totalCost.toFixed(1)}</td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-                        <div className="mt-4 text-xs text-slate-400">
-                          * 注意：理论计算值仅供参考，实际生产请考虑原料损耗及检测误差。非脂乳固体 (MSNF) 估算值: {result.finalStats.msnf.toFixed(2)}%。
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
+                 </div>
+               ))}
             </div>
           </div>
         )}
       </main>
+
+      {/* 3. Mobile Result Sticky Footer (Only when in Calculator Tab) */}
+      {activeTab === 'calc' && (
+        <div className="md:hidden fixed bottom-[60px] w-full bg-white/95 backdrop-blur border-t border-slate-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] transition-transform">
+           {result && result.success ? (
+             <details className="group">
+                <summary className="list-none p-3 px-4 flex justify-between items-center cursor-pointer">
+                   <div className="flex flex-col">
+                      <span className="text-xs text-slate-500 font-medium">预估总成本</span>
+                      <span className="font-bold text-lg text-blue-600">¥{(result.totalCost / targetMass).toFixed(2)}<span className="text-xs text-slate-400">/kg</span></span>
+                   </div>
+                   <div className="flex items-center gap-3">
+                      <div className="text-right">
+                         <div className="text-xs text-slate-500">TS</div>
+                         <div className="font-bold text-slate-700">{result.finalStats.ts.toFixed(1)}%</div>
+                      </div>
+                      <div className={`p-2 rounded-full ${result.success ? 'bg-green-100 text-green-600' : 'bg-red-100'}`}>
+                         {result.success ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
+                      </div>
+                   </div>
+                </summary>
+                {/* Expanded Detail on Mobile */}
+                <div className="px-4 pb-4 border-t border-slate-100 bg-slate-50/50 max-h-[40vh] overflow-y-auto">
+                   <h3 className="text-xs font-bold text-slate-400 uppercase mt-3 mb-2">配料明细</h3>
+                   <table className="w-full text-sm">
+                      <tbody>
+                         {Object.entries(result.amounts)
+                            .sort(([,a], [,b]) => b-a)
+                            .map(([id, amt]) => (
+                               amt > 0.01 && (
+                                 <tr key={id} className="border-b border-slate-100 last:border-0">
+                                    <td className="py-2 text-slate-600">{ingredients.find(i=>i.id===id)?.name}</td>
+                                    <td className="py-2 text-right font-bold">{amt.toFixed(1)} kg</td>
+                                 </tr>
+                               )
+                            ))}
+                      </tbody>
+                   </table>
+                </div>
+             </details>
+           ) : (
+             <div className="p-3 px-4 text-center text-slate-400 text-sm flex items-center justify-center gap-2">
+               <AlertCircle size={16} /> {result?.error || "等待输入..."}
+             </div>
+           )}
+        </div>
+      )}
+
+      {/* 4. Bottom Navigation Bar (Mobile) */}
+      <nav className="md:hidden bg-white border-t border-slate-200 flex justify-around pb-safe pt-1 z-50 fixed bottom-0 w-full">
+        <button 
+          onClick={() => setActiveTab('calc')}
+          className={`flex flex-col items-center p-2 w-full ${activeTab === 'calc' ? 'text-blue-600' : 'text-slate-400'}`}
+        >
+          <Calculator size={22} />
+          <span className="text-[10px] font-medium mt-1">配方</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('db')}
+          className={`flex flex-col items-center p-2 w-full ${activeTab === 'db' ? 'text-blue-600' : 'text-slate-400'}`}
+        >
+          <Database size={22} />
+          <span className="text-[10px] font-medium mt-1">原料</span>
+        </button>
+        <button 
+          onClick={() => setActiveTab('settings')}
+          className={`flex flex-col items-center p-2 w-full ${activeTab === 'settings' ? 'text-blue-600' : 'text-slate-400'}`}
+        >
+          <Settings size={22} />
+          <span className="text-[10px] font-medium mt-1">设置</span>
+        </button>
+      </nav>
+
     </div>
   );
 }
