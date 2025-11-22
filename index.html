@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>乳品研发计算器 v13.0</title>
+    <title>乳品研发计算器 v14.0</title>
     
     <!-- PWA 配置 -->
     <meta name="mobile-web-app-capable" content="yes">
@@ -22,7 +22,7 @@
     
     <style>
         :root {
-            --safe-top: env(safe-area-inset-top, 44px);
+            --safe-top: env(safe-area-inset-top, 50px);
             --safe-bottom: env(safe-area-inset-bottom, 20px);
             --primary: #0052D9;
             --bg: #F5F7FA;
@@ -39,48 +39,42 @@
         ::-webkit-scrollbar { width: 0px; background: transparent; }
         input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 
-        /* 玻璃态头部 */
         .header-glass {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255, 255, 255, 0.98);
             backdrop-filter: saturate(180%) blur(10px);
             border-bottom: 1px solid rgba(0,0,0,0.05);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
         }
         
-        /* 适配不同机型的顶部高度 */
-        .pt-safe { padding-top: calc(var(--safe-top) + 8px); }
+        .pt-safe { padding-top: calc(var(--safe-top) + 10px); }
         .pb-safe { padding-bottom: calc(var(--safe-bottom) + 60px); }
         .tap-active:active { transform: scale(0.96); opacity: 0.8; transition: transform 0.1s; }
         
-        /* 列表项 */
         .list-row {
             display: flex; align-items: center; background: #fff; border-bottom: 1px solid #F3F4F6;
-            padding: 12px 14px; position: relative; transition: background-color 0.2s;
+            padding: 14px 16px; position: relative; transition: background-color 0.2s;
         }
         .list-row:last-child { border-bottom: none; }
         .list-row.locked-bg { background-color: #F9FAFB; }
         .list-row.post-add-bg { background-color: #F0F9FF; border-left: 3px solid #3B82F6; }
         
-        /* 步进器 */
         .stepper-btn {
-            width: 36px; height: 36px; display: flex; align-items: center; justify-content: center;
-            background: #F3F4F6; color: #4B5563; border-radius: 10px; font-weight: bold; font-size: 18px;
-            flex-shrink: 0;
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            background: #F3F4F6; color: #4B5563; border-radius: 12px; font-weight: bold; font-size: 22px;
         }
         .stepper-btn:active { background: #E5E7EB; color: #111827; }
         
         .input-focus:focus-within { background: #fff; box-shadow: 0 0 0 2px var(--primary); z-index: 10; }
         .cost-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: #10B981; opacity: 0.4; }
 
-        /* Tab Bar */
         .tab-bar {
             position: fixed; bottom: 0; left: 0; right: 0;
             background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(20px);
             border-top: 1px solid rgba(0,0,0,0.05);
             display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;
-            padding-bottom: calc(env(safe-area-inset-bottom) + 4px);
-            height: calc(56px + env(safe-area-inset-bottom));
+            padding-bottom: env(safe-area-inset-bottom);
+            height: calc(60px + env(safe-area-inset-bottom));
             z-index: 50;
         }
         .tab-item {
@@ -88,16 +82,14 @@
             color: #9CA3AF; transition: all 0.2s; gap: 2px;
         }
         .tab-item.active { color: #0052D9; }
-        .tab-item .icon-box { padding: 4px 16px; border-radius: 16px; transition: background 0.2s; }
+        .tab-item .icon-box { padding: 6px; border-radius: 14px; transition: background 0.2s; }
         .tab-item.active .icon-box { background: #EFF6FF; }
-        .tab-item .label { font-size: 10px; font-weight: 600; }
+        .tab-item .label { font-size: 11px; font-weight: 600; }
 
-        /* Checkbox */
-        .chk-round { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #D1D5DB; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .chk-round { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #D1D5DB; display: flex; align-items: center; justify-content: center; }
         .chk-round.checked { background: #0052D9; border-color: #0052D9; }
-        .chk-round.checked::after { content: ''; width: 9px; height: 5px; border-left: 2px solid white; border-bottom: 2px solid white; transform: rotate(-45deg) translate(1px, -1px); }
+        .chk-round.checked::after { content: ''; width: 10px; height: 6px; border-left: 2px solid white; border-bottom: 2px solid white; transform: rotate(-45deg) translate(1px, -1px); }
 
-        /* Toast */
         .toast-container {
             position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
             background: rgba(31, 41, 55, 0.9); color: white; padding: 12px 24px; border-radius: 50px;
@@ -107,15 +99,25 @@
         }
         .toast-show { opacity: 1; }
         
-        /* Toggle Switch */
-        .toggle-sm { position: relative; width: 32px; height: 18px; background: #E5E7EB; border-radius: 20px; transition: all 0.2s; flex-shrink: 0; }
+        .toggle-sm { position: relative; width: 36px; height: 20px; background: #E5E7EB; border-radius: 20px; transition: all 0.2s; }
         .toggle-sm.checked { background: #0052D9; }
-        .toggle-sm::after { content:''; position: absolute; left: 2px; top: 2px; width: 14px; height: 14px; background: white; border-radius: 50%; transition: all 0.2s; }
-        .toggle-sm.checked::after { transform: translateX(14px); }
+        .toggle-sm::after { content:''; position: absolute; left: 2px; top: 2px; width: 16px; height: 16px; background: white; border-radius: 50%; transition: all 0.2s; }
+        .toggle-sm.checked::after { transform: translateX(16px); }
     </style>
 </head>
 <body>
     <div id="root"></div>
+
+    <script type="text/javascript">
+        if ('serviceWorker' in navigator) {
+            try {
+                const swContent = "self.addEventListener('fetch', (e) => {}); self.addEventListener('install', (e) => { self.skipWaiting(); });";
+                const blob = new Blob([swContent], {type: 'text/javascript'});
+                const swUrl = URL.createObjectURL(blob);
+                navigator.serviceWorker.register(swUrl).catch(e => console.log('SW skipped'));
+            } catch(e) {}
+        }
+    </script>
 
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef, Fragment } = React;
@@ -138,11 +140,13 @@
             Trash: "M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2",
             Bolt: "M13 2L3 14h9l-1 8 10-12h-9l1-8z",
             Microscope: "M6 18h8M3 22h18M14 22a7 7 0 1 0 0-14h-1M9 14h2M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2ZM12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3",
+            Refresh: "M23 4v6h-6M1 20v-6h6M20.49 15a9 9 0 1 1-2.12-9.36L23 10",
             Edit: "M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7",
             Target: "M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 16a6 6 0 1 1 6-6 6 6 0 0 1-6 6z",
             Download: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3",
             Save: "M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2zM17 21v-8H7v8M7 3v5h8",
-            EditPen: "M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"
+            EditPen: "M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z",
+            Star: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
         };
 
         const DEFAULT_INGREDIENTS = [
@@ -164,11 +168,13 @@
         );
 
         const NumInput = ({ label, value, onChange, suffix, enabled, onToggle, className }) => (
-            <div className={`bg-white rounded-xl p-3 flex flex-col justify-center border transition-colors ${enabled===false ? 'opacity-50 border-gray-100' : 'border-blue-100'} ${className}`}>
+            <div className={`bg-gray-50 rounded-xl p-3 flex flex-col justify-center border transition-colors ${enabled===false ? 'opacity-50 border-gray-100' : 'border-blue-100 bg-white'} ${className}`}>
                 <div className="flex justify-between items-center mb-1">
                     <div className="text-[10px] text-gray-400 font-bold uppercase">{label}</div>
                     {onToggle && (
-                        <div className={`toggle-sm ${enabled?'checked':''}`} onClick={(e) => { e.stopPropagation(); onToggle(); }}></div>
+                        <div className={`w-8 h-4 rounded-full relative transition-colors cursor-pointer ${enabled ? 'bg-blue-500' : 'bg-gray-300'}`} onClick={(e) => { e.stopPropagation(); onToggle(); }}>
+                            <div className={`w-3 h-3 bg-white rounded-full absolute top-0.5 transition-transform ${enabled ? 'left-[18px]' : 'left-[2px]'}`}></div>
+                        </div>
                     )}
                 </div>
                 <div className="flex items-center">
@@ -195,13 +201,16 @@
         };
 
         const App = () => {
+            // --- State ---
             const [activeTab, setActiveTab] = useState('ai'); 
-            const [library, setLibrary] = useState(() => JSON.parse(localStorage.getItem('v13_lib')) || DEFAULT_INGREDIENTS);
-            const [formula, setFormula] = useState(() => JSON.parse(localStorage.getItem('v13_formula')) || [{...DEFAULT_INGREDIENTS[0], uuid:'1', weight:850, locked:false}, {...DEFAULT_INGREDIENTS[5], uuid:'2', weight:60, locked:true}]);
-            const [targets, setTargets] = useState(() => JSON.parse(localStorage.getItem('v13_targets')) || {fat:3.5, pro:3.0, ts:12.0, se: 7.0, enableTs: true, enableSe: true});
-            const [batchSize, setBatchSize] = useState(() => parseFloat(localStorage.getItem('v13_batch')) || 1000);
-            const [productMode, setProductMode] = useState(() => localStorage.getItem('v13_pmode') || 'liquid');
-            const [savedRecipes, setSavedRecipes] = useState(() => JSON.parse(localStorage.getItem('v13_recipes')) || []);
+            
+            const [library, setLibrary] = useState(() => JSON.parse(localStorage.getItem('v14_lib')) || DEFAULT_INGREDIENTS);
+            const [formula, setFormula] = useState(() => JSON.parse(localStorage.getItem('v14_formula')) || [{...DEFAULT_INGREDIENTS[0], uuid:'1', weight:850, locked:false}, {...DEFAULT_INGREDIENTS[5], uuid:'2', weight:60, locked:true}]);
+            const [targets, setTargets] = useState(() => JSON.parse(localStorage.getItem('v14_targets')) || {fat:3.5, pro:3.0, ts:12.0, se: 7.0, enableTs: true, enableSe: true});
+            const [batchSize, setBatchSize] = useState(() => parseFloat(localStorage.getItem('v14_batch')) || 1000);
+            const [productMode, setProductMode] = useState(() => localStorage.getItem('v14_pmode') || 'liquid');
+            const [savedRecipes, setSavedRecipes] = useState(() => JSON.parse(localStorage.getItem('v14_recipes')) || []);
+            
             const [viewMode, setViewMode] = useState('calc'); 
             const [isLocked, setIsLocked] = useState(false);
             const [baseView, setBaseView] = useState(true);
@@ -210,20 +219,22 @@
             const [toast, setToast] = useState({ show: false, msg: '' });
             const [isSolving, setIsSolving] = useState(false);
             const [genSelected, setGenSelected] = useState([]);
-            const [fossReadings, setFossReadings] = useState(() => JSON.parse(localStorage.getItem('v13_foss')) || { fat: 0, protein: 0, ts: 0 });
-            const [acidity, setAcidity] = useState(() => JSON.parse(localStorage.getItem('v13_acidity')) || { t: 70 });
-            const [cultureCalc, setCultureCalc] = useState(() => JSON.parse(localStorage.getItem('v13_culture')) || { dcuPerTon: 50, pouchSize: 50, pouchWeight: 10 });
+
+            // Tools Data
+            const [fossReadings, setFossReadings] = useState(() => JSON.parse(localStorage.getItem('v14_foss')) || { fat: 0, protein: 0, ts: 0 });
+            const [acidity, setAcidity] = useState(() => JSON.parse(localStorage.getItem('v14_acidity')) || { t: 70 });
+            const [cultureCalc, setCultureCalc] = useState(() => JSON.parse(localStorage.getItem('v14_culture')) || { dcuPerTon: 50, pouchSize: 50, pouchWeight: 10 });
 
             useEffect(() => {
-                localStorage.setItem('v13_lib', JSON.stringify(library));
-                localStorage.setItem('v13_formula', JSON.stringify(formula));
-                localStorage.setItem('v13_targets', JSON.stringify(targets));
-                localStorage.setItem('v13_batch', batchSize);
-                localStorage.setItem('v13_recipes', JSON.stringify(savedRecipes));
-                localStorage.setItem('v13_pmode', productMode);
-                localStorage.setItem('v13_foss', JSON.stringify(fossReadings));
-                localStorage.setItem('v13_acidity', JSON.stringify(acidity));
-                localStorage.setItem('v13_culture', JSON.stringify(cultureCalc));
+                localStorage.setItem('v14_lib', JSON.stringify(library));
+                localStorage.setItem('v14_formula', JSON.stringify(formula));
+                localStorage.setItem('v14_targets', JSON.stringify(targets));
+                localStorage.setItem('v14_batch', batchSize);
+                localStorage.setItem('v14_recipes', JSON.stringify(savedRecipes));
+                localStorage.setItem('v14_pmode', productMode);
+                localStorage.setItem('v14_foss', JSON.stringify(fossReadings));
+                localStorage.setItem('v14_acidity', JSON.stringify(acidity));
+                localStorage.setItem('v14_culture', JSON.stringify(cultureCalc));
             }, [library, formula, targets, batchSize, savedRecipes, productMode, fossReadings, acidity, cultureCalc]);
 
             const showToast = (msg) => { setToast({ show: true, msg }); setTimeout(() => setToast({ show: false, msg: '' }), 2000); };
@@ -231,15 +242,13 @@
             
             const res = useMemo(() => {
                 let W=0, F=0, P=0, T=0, C=0, S=0, V=0;
-                const activeItems = (isYogurt && baseView) ? formula.filter(i => !i.isPost) : formula;
-                
-                activeItems.forEach(i => {
+                formula.forEach(i => {
                     const w = parseFloat(i.weight)||0;
                     W+=w; F+=w*(i.fat||0); P+=w*(i.protein||0); T+=w*(i.ts||0); C+=w*(i.price||0); S+=w*(i.sweet||0); V+=w*(i.visc||0);
                 });
                 const sW = W || 1;
                 return { w: W, fat: F/sW, pro: P/sW, ts: T/sW, pf: F>0?P/F:0, cost: C, costPerKg: C/sW, se: S/sW, tex: V/sW };
-            }, [formula, isYogurt, baseView]);
+            }, [formula]);
 
             const updateItem = (uuid, k, v) => setFormula(formula.map(i => i.uuid===uuid ? {...i, [k]: v} : i));
             const delItem = (uuid) => { vibrate(); setFormula(formula.filter(i => i.uuid!==uuid)); };
@@ -289,88 +298,96 @@
             
             const calcCultureWeight = () => { const batchInTon = batchSize / 1000000; const totalDCU = batchInTon * cultureCalc.dcuPerTon; const grams = (totalDCU / cultureCalc.pouchSize) * cultureCalc.pouchWeight; return isNaN(grams) ? 0 : grams; };
 
-            // --- Gradient Descent Solver ---
-            const autoSolve = (mode) => {
+            // --- Auto Pilot Algorithm (Heuristic + Optimization) ---
+            const runAutoPilot = () => {
                 vibrate();
-                const unlocked = mode === 'gen' ? genSelected.map(id=>library.find(l=>l.id===id)) : formula.filter(i => !i.locked);
-                if (mode === 'gen' && unlocked.length === 0) return showToast("请至少选择一种原料");
-                if (mode === 'balance' && unlocked.length === 0) return showToast("请解锁部分原料");
-
                 setIsSolving(true);
-                setTimeout(() => {
-                    const fixedWeight = mode === 'gen' ? 0 : formula.reduce((acc, i) => i.locked ? acc + (parseFloat(i.weight)||0) : acc, 0);
-                    const targetW = batchSize - fixedWeight;
+                
+                // 1. Determine Ingredients Pool
+                let pool = [];
+                
+                // If user manually selected, use those
+                if (genSelected.length > 0) {
+                    pool = genSelected.map(id => library.find(l => l.id === id));
+                } else {
+                    // AUTO-RECOMMENDATION LOGIC
+                    // Add base
+                    pool.push(library.find(i => i.id === 'rm') || library[0]);
                     
-                    if(targetW <= 0) { setIsSolving(false); return showToast("锁定原料已满/超重"); }
-
-                    let currentItems = unlocked.map((item) => ({ ...item, weight: targetW / unlocked.length }));
-                    const iterations = 2000;
-                    let step = targetW * 0.05; 
-                    const decay = 0.995; 
-                    let baseFat=0, basePro=0, baseTS=0, baseSE=0;
-
-                    if(mode === 'balance') {
-                        formula.forEach(i => {
-                            if(i.locked) {
-                                const w = parseFloat(i.weight)||0;
-                                baseFat += w * (i.fat||0); basePro += w * (i.protein||0); baseTS += w * (i.ts||0); baseSE += w * (i.sweet||0);
-                            }
-                        });
+                    // Need Fat?
+                    if (targets.fat > 3.5) pool.push(library.find(i => i.id === 'cr') || library.find(i => i.fat > 30));
+                    
+                    // Need Protein?
+                    if (targets.pro > 3.1) {
+                        // Prioritize WPC for efficiency, SMP for bulk
+                        pool.push(library.find(i => i.id === 'wpc') || library.find(i => i.protein > 50));
+                        if (targets.ts > 12) pool.push(library.find(i => i.id === 'smp'));
                     }
-
-                    let bestError = Infinity;
-                    let bestWeights = currentItems.map(i => i.weight);
-
-                    for (let k = 0; k < iterations; k++) {
-                        const idx1 = Math.floor(Math.random() * currentItems.length);
-                        let idx2 = Math.floor(Math.random() * currentItems.length);
-                        while(idx1 === idx2 && currentItems.length > 1) idx2 = Math.floor(Math.random() * currentItems.length);
-
-                        const move = (Math.random() - 0.5) * step; 
-                        if (currentItems[idx1].weight - move >= 0 && currentItems[idx2].weight + move >= 0) {
-                            currentItems[idx1].weight -= move;
-                            currentItems[idx2].weight += move;
-                            
-                            let varFat=0, varPro=0, varTS=0, varSE=0;
-                            currentItems.forEach(i => {
-                                varFat += i.weight * (i.fat||0); varPro += i.weight * (i.protein||0); varTS += i.weight * (i.ts||0); varSE += i.weight * (i.sweet||0);
-                            });
-
-                            const totalFat = (baseFat + varFat) / batchSize * 100;
-                            const totalPro = (basePro + varPro) / batchSize * 100;
-                            const totalTS = (baseTS + varTS) / batchSize * 100;
-                            const totalSE = (baseSE + varSE) / batchSize * 100;
-
-                            let err = Math.abs(totalFat - targets.fat)*10 + Math.abs(totalPro - targets.pro)*10;
-                            if(targets.enableTs) err += Math.abs(totalTS - targets.ts)*2;
-                            if(isYogurt && targets.enableSe) err += Math.abs(totalSE - targets.se)*3;
-
-                            if (err < bestError) {
-                                bestError = err;
-                                bestWeights = currentItems.map(i => i.weight);
-                            } else {
-                                if (k % 10 === 0) currentItems.forEach((i, idx) => i.weight = bestWeights[idx]);
-                            }
-                        }
-                        step *= decay;
+                    
+                    // Need Sweetness?
+                    if (isYogurt && targets.se > 0 && targets.enableSe) {
+                         pool.push(library.find(i => i.id === 'suc'));
                     }
+                    
+                    // Stabilizer?
+                    if (isYogurt) pool.push(library.find(i => i.id === 'stab'));
+                    
+                    // Dedupe and clean
+                    pool = [...new Set(pool.filter(Boolean))];
+                }
 
-                    if (mode === 'gen') {
-                        const newF = unlocked.map((item, idx) => ({ ...item, uuid: Math.random().toString(36).substr(2,9), weight: parseFloat(bestWeights[idx].toFixed(2)), locked: false }));
-                        setFormula(newF); setGenSelected([]);
-                    } else {
-                        let uIdx = 0;
-                        const newF = formula.map(i => {
-                            if(i.locked) return i;
-                            const w = bestWeights[uIdx++];
-                            return {...i, weight: parseFloat(w.toFixed(2))};
-                        });
-                        setFormula(newF);
+                setTimeout(() => {
+                    const targetW = batchSize;
+                    
+                    // 2. Run Optimizer
+                    let bestWeights = pool.map(() => 0);
+                    let minError = Infinity;
+                    
+                    // Initialize random weights
+                    for (let k = 0; k < 5000; k++) {
+                         let rands = pool.map(() => Math.random());
+                         let sumR = rands.reduce((a,b)=>a+b, 0);
+                         let currentWs = rands.map(r => (r/sumR) * targetW);
+                         
+                         // Calc
+                         let cF=0, cP=0, cTS=0, cSE=0;
+                         pool.forEach((item, idx) => {
+                             let w = currentWs[idx];
+                             cF += w * (item.fat||0); 
+                             cP += w * (item.protein||0); 
+                             cTS += w * (item.ts||0); 
+                             cSE += w * (item.sweet||0);
+                         });
+                         
+                         const fVal = (cF/targetW)*100;
+                         const pVal = (cP/targetW)*100;
+                         const tsVal = (cTS/targetW)*100;
+                         const seVal = (cSE/targetW)*100;
+                         
+                         let err = Math.abs(fVal - targets.fat)*10 + Math.abs(pVal - targets.pro)*10;
+                         if (targets.enableTs) err += Math.abs(tsVal - targets.ts)*2;
+                         if (isYogurt && targets.enableSe) err += Math.abs(seVal - targets.se)*3;
+                         
+                         if(err < minError) {
+                             minError = err;
+                             bestWeights = currentWs;
+                         }
                     }
+                    
+                    // 3. Generate & Clean Recipe
+                    const newF = pool.map((item, idx) => ({
+                        ...item,
+                        uuid: Math.random().toString(36).substr(2,9),
+                        weight: parseFloat(bestWeights[idx].toFixed(2)),
+                        locked: false
+                    })).filter(i => i.weight > 0.1); // Filter out tiny amounts
+
+                    setFormula(newF);
+                    setGenSelected([]);
                     setIsSolving(false);
                     setActiveTab('recipe');
-                    showToast("计算完成");
-                }, 600);
+                    showToast("配方已生成");
+                }, 800);
             };
 
             const handleSave = () => {
@@ -381,36 +398,47 @@
                 setSavedRecipes([newRecipe, ...savedRecipes]);
                 showToast(`已保存: ${name}`);
             };
+
             const handleRename = (id) => {
                 const r = savedRecipes.find(r => r.id === id);
                 const newName = prompt("修改名称", r.name);
                 if (newName) setSavedRecipes(savedRecipes.map(r => r.id === id ? { ...r, name: newName } : r));
             };
-            const handleDeleteRecipe = (id) => { if(confirm("确定删除？")) { setSavedRecipes(savedRecipes.filter(r => r.id !== id)); showToast("已删除"); } };
+            
+            const handleDeleteRecipe = (id) => {
+                if(confirm("确定删除？")) { setSavedRecipes(savedRecipes.filter(r => r.id !== id)); showToast("已删除"); }
+            };
+            
             const handleLoadRecipe = (r) => {
                  if(confirm(`加载 "${r.name}"?`)) {
                     setFormula(r.formula); setTargets(r.targets); setBatchSize(r.batchSize); if(r.productMode) setProductMode(r.productMode); setActiveTab('recipe'); showToast("已读取");
                  }
             };
 
-            // --- RENDERERS ---
+            // Renders
             const renderAI = () => (
                 <div className="space-y-6 animate-slide-up pb-24">
                     <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
                         <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2 text-lg"><Icon d={ICONS.Target} size={20} className="text-blue-600"/> 目标设定</h3>
                         <div className="grid grid-cols-2 gap-4 mb-6">
-                            {['fat', 'pro'].map(k => (<NumInput key={k} label={`${k.toUpperCase()}%`} value={targets[k]} onChange={e=>setTargets({...targets, [k]:parseFloat(e.target.value)})} />))}
+                            <NumInput label="脂肪 FAT%" value={targets.fat} onChange={e=>setTargets({...targets, fat:parseFloat(e.target.value)})} />
+                            <NumInput label="蛋白 PRO%" value={targets.pro} onChange={e=>setTargets({...targets, pro:parseFloat(e.target.value)})} />
                             <NumInput label="总固 TS%" value={targets.ts} onChange={e=>setTargets({...targets, ts:parseFloat(e.target.value)})} enabled={targets.enableTs} onToggle={()=>setTargets({...targets, enableTs:!targets.enableTs})} />
                             {isYogurt && <NumInput label="甜度 SE" value={targets.se} onChange={e=>setTargets({...targets, se:parseFloat(e.target.value)})} enabled={targets.enableSe} onToggle={()=>setTargets({...targets, enableSe:!targets.enableSe})} />}
                         </div>
-                        <div className="flex gap-3"><button onClick={()=>autoSolve('balance')} disabled={isSolving} className="flex-1 h-12 bg-blue-50 text-blue-600 rounded-xl font-bold flex items-center justify-center gap-2 active:scale-95 transition-transform"><Icon d={ICONS.Wand} size={18}/> 保留锁定，调整其余</button></div>
-                        <p className="text-[10px] text-gray-400 text-center mt-3">锁定不需要调整的原料，AI 将自动平衡剩余部分</p>
-                    </div>
-                    <div className="bg-white rounded-3xl p-6 shadow-sm border border-gray-100">
-                        <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2 text-lg"><Icon d={ICONS.Bolt} size={20} className="text-purple-600"/> 智能生成新配方</h3>
-                        <div className="text-xs text-gray-500 mb-3 font-bold">选择原料池:</div>
-                        <div className="grid grid-cols-3 gap-3 mb-6">{library.map(ing => (<div key={ing.id} onClick={() => {vibrate(); setGenSelected(prev => prev.includes(ing.id)?prev.filter(i=>i!==ing.id):[...prev,ing.id])}} className={`p-3 rounded-xl text-xs font-bold text-center transition-all border ${genSelected.includes(ing.id)?'bg-purple-50 border-purple-200 text-purple-700':'bg-gray-50 border-transparent text-gray-500'}`}>{ing.name}</div>))}</div>
-                        <button onClick={()=>autoSolve('gen')} disabled={isSolving} className="w-full h-14 bg-purple-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-purple-200 active:scale-95 transition-transform text-lg"><Icon d={ICONS.Wand} size={20}/> 生成配方</button>
+                        <div className="text-xs text-gray-500 mb-3 font-bold">选择原料池 (可选):</div>
+                        <div className="grid grid-cols-3 gap-3 mb-6">
+                            {library.map(ing => (
+                                <div key={ing.id} onClick={() => {vibrate(); setGenSelected(prev => prev.includes(ing.id)?prev.filter(i=>i!==ing.id):[...prev,ing.id])}} 
+                                     className={`p-3 rounded-xl text-xs font-bold text-center transition-all border ${genSelected.includes(ing.id)?'bg-purple-50 border-purple-200 text-purple-700':'bg-gray-50 border-transparent text-gray-500'}`}>
+                                    {ing.name}
+                                </div>
+                            ))}
+                        </div>
+                        <button onClick={runAutoPilot} disabled={isSolving} className="w-full h-14 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-200 active:scale-95 transition-transform text-lg">
+                            <Icon d={ICONS.Wand} size={22}/> {isSolving?'AI 计算中...':(genSelected.length>0 ? '生成指定配方' : '🚀 AI 自动推荐配方')}
+                        </button>
+                        <p className="text-[10px] text-gray-400 text-center mt-3">不选原料时，AI 将自动匹配最佳组合</p>
                     </div>
                 </div>
             );
@@ -425,24 +453,28 @@
                          <button onClick={balanceWater} className="flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-3 py-2 rounded-lg active:scale-95 transition-transform"><Icon d={ICONS.Drop} size={14}/> 一键补水</button>
                     </div>
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        {formula.length === 0 ? <div className="p-10 text-center text-gray-400 text-sm">暂无原料</div> : formula.map(item => {
+                        {formula.length === 0 ? <div className="p-10 text-center text-gray-400 text-sm">暂无原料，请去智能页生成</div> : formula.map(item => {
                             if (isYogurt && baseView && item.isPost) return null;
                             return (
                                 <div key={item.uuid} className={`list-row ${item.locked?'locked-bg':''} ${item.isPost?'post-add-bg':''}`} onClick={() => setEditId(editId===item.uuid?null:item.uuid)}>
-                                    <div className="w-24 flex flex-col justify-center pr-1">
-                                        <div className={`font-bold text-sm truncate flex items-center gap-1 ${item.locked?'text-gray-400':'text-gray-800'}`}>{item.name}{item.locked && <Icon d={ICONS.Lock} size={10} className="text-amber-500"/>}{item.isPost && <span className="text-[8px] bg-purple-100 text-purple-600 px-1 rounded">后</span>}</div>
-                                        <div className="text-[9px] text-gray-400 font-mono mt-0.5">F{item.fat} P{item.protein}</div>
+                                    <div className="flex items-center gap-3 w-28">
+                                        <button onClick={(e) => {e.stopPropagation(); updateItem(item.uuid, 'locked', !item.locked); vibrate();}} className={`text-gray-300 transition-colors ${item.locked ? 'text-amber-500' : 'hover:text-gray-400'}`}>
+                                            <Icon d={item.locked ? ICONS.Lock : ICONS.Unlock} size={16}/>
+                                        </button>
+                                        <div className="flex-1">
+                                            <div className={`font-bold text-sm truncate ${item.locked?'text-gray-500':'text-gray-800'}`}>{item.name}{item.isPost && <span className="text-[8px] bg-purple-100 text-purple-600 px-1.5 rounded ml-1">后</span>}</div>
+                                            <div className="text-[9px] text-gray-400 font-mono mt-0.5">F{item.fat} P{item.protein}</div>
+                                        </div>
                                     </div>
-                                    <div className="flex-1 px-1"><StepperInput value={item.weight} disabled={item.locked} onChange={(e) => !item.locked && updateItem(item.uuid, 'weight', e.target.value)} /></div>
+                                    <div className="flex-1 px-2"><StepperInput value={item.weight} disabled={item.locked} onChange={(e) => !item.locked && updateItem(item.uuid, 'weight', e.target.value)} /></div>
                                     <div className="w-16 flex flex-col items-end justify-center relative pl-1">
                                         <div className="font-bold text-xs text-gray-700 font-mono">{viewMode==='cost' ? `¥${item.price}` : (res.w>0?(item.weight/res.w*100).toFixed(1)+'%':'0%')}</div>
-                                        <button onClick={(e)=>{e.stopPropagation(); delItem(item.uuid)}} className="text-gray-300 p-1"><Icon d={ICONS.X} size={14}/></button>
+                                        <button onClick={(e)=>{e.stopPropagation(); delItem(item.uuid)}} className="text-gray-300 p-1 hover:text-red-500"><Icon d={ICONS.X} size={14}/></button>
                                         {viewMode==='cost' && <div className="cost-bar" style={{width: `${(item.weight*item.price)/(res.cost||1)*100}%`}}></div>}
                                     </div>
                                     {editId === item.uuid && (
                                         <div className="w-full pt-3 pb-1 animate-slide-down border-t border-gray-50 mt-2" onClick={e=>e.stopPropagation()}>
-                                            <div className="flex justify-between mb-2">
-                                                <button onClick={()=>updateItem(item.uuid,'locked',!item.locked)} className="text-xs bg-gray-100 px-3 py-1.5 rounded-lg text-gray-600 font-bold">{item.locked?'解锁':'锁定'}</button>
+                                            <div className="flex justify-between mb-2 px-1">
                                                 {isYogurt && <button onClick={()=>updateItem(item.uuid,'isPost',!item.isPost)} className="text-xs bg-purple-50 px-3 py-1.5 rounded-lg text-purple-600 font-bold">{item.isPost?'设为基料':'设为后添加'}</button>}
                                             </div>
                                             <div className="grid grid-cols-4 gap-2">
