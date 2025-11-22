@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>乳品研发配方计算器</title>
+    
+    <!-- PWA 核心配置 -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#F2F2F7">
+    <meta name="application-name" content="乳品计算">
+    
+    <!-- 图标 -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23007AFF'/%3E%3Cpath d='M50 20 C50 20 30 50 30 70 A20 20 0 0 0 70 70 C70 50 50 20 50 20 Z' fill='white'/%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23007AFF'/%3E%3Cpath d='M50 20 C50 20 30 50 30 70 A20 20 0 0 0 70 70 C70 50 50 20 50 20 Z' fill='white'/%3E%3C/svg%3E">
+
+    <!-- 嵌入式 Manifest (必须包含 start_url 和 display 属性) -->
+    <link rel="manifest" href='data:application/manifest+json;base64,ewogICJuYW1lIjogIuS5s+WTgeeglOWukeiup+eul+WZqCIsCiAgInNob3J0X25hbWUiOiAi5Lmz5ZOB6K6h566XIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiNGMkYyRjciLAogICJ0aGVtZV9jb2xvciI6ICIjMDA3QUZGIiwKICAiaWNvbnMiOiBbCiAgICB7CiAgICAgICJzcmMiOiAiZGF0YTppbWFnZS9zdmcreG1sLCUzQ3N2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHZpZXdCb3g9JzAgMCAxMDAgMTAwJyUzRSUzQ3JlY3Qgd2lkdGg9JzEwMCcgaGVpZ2h0PScxMDAnIHJ4PScyMCcgZmlsbD0nJTIzMDA3QUZGJy8lM0UlM0NwYXRoIGQ9J001MCAyMCBDNTAgMjAgMzAgNTAgMzAgNzAgQTIwIDIwIDAgMCAwIDcwIDcwIEM3MCA1MCA1MCAyMCA1MCAyMCBaJyBmaWxsPSd3aGl0ZScvJTNFJTNDL3N2ZyUzRSIsCiAgICAgICJzaXplcyI6ICIxOTJ4MTkyIiwKICAgICAgInR5cGUiOiAiaW1hZ2Uvc3ZnK3htbCIKICAgIH0KICBdCn0='>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    
+    <style>
+        /* 移动端适配核心样式 */
+        :root {
+            --ios-bg: #F2F2F7;
+            --safe-top: env(safe-area-inset-top, 20px);
+            --safe-bottom: env(safe-area-inset-bottom, 20px);
+        }
+
+        body {
+            background-color: var(--ios-bg);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            color: #1C1C1E;
+            overscroll-behavior-y: none; 
+            -webkit-overflow-scrolling: touch;
+        }
+
+        ::-webkit-scrollbar { width: 0px; background: transparent; }
+        input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
+        .ios-glass {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+        }
+        
+        .pt-safe-offset { padding-top: calc(var(--safe-top) + 12px); }
+        .pb-safe-offset { padding-bottom: calc(var(--safe-bottom) + 12px); }
+        
+        @keyframes slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        .animate-slide-up { animation: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        
+        @keyframes scale-in { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .animate-scale { animation: scale-in 0.2s ease-out; }
+
+        .active-scale:active { transform: scale(0.96); transition: transform 0.1s; }
+        
+        /* 指引箭头动画 */
+        @keyframes bounce-right-up {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(5px, -5px); }
+        }
+        .animate-point { animation: bounce-right-up 1.5s infinite; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/javascript">
+        // --- 黑科技：动态注册 Service Worker 以满足 PWA 安装标准 ---
+        // 安卓 Chrome 需要 Service Worker 和 fetch handler 才会触发 beforeinstallprompt
+        // 注意：在 file:// 协议下，Service Worker 通常会被浏览器安全策略阻止，这是正常的。
+        if ('serviceWorker' in navigator) {
+            try {
+                const swContent = "self.addEventListener('fetch', (e) => {}); self.addEventListener('install', (e) => { self.skipWaiting(); });";
+                const blob = new Blob([swContent], {type: 'text/javascript'});
+                const swUrl = URL.createObjectURL(blob);
+                navigator.serviceWorker.register(swUrl).catch(e => console.log('SW skipped (local)'));
+            } catch(e) {}
+        }
+    </script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef, Fragment } = React;
+
+        // --- 震动反馈 ---
+        const vibrate = () => { if (navigator.vibrate) navigator.vibrate(10); };
+
+        // --- 图标定义 ---
+        const ICONS = {
+            FlaskConical: <path d="M10 2v7.527a2 2 0 0 1-.211.896L4.72 20.55a1 1 0 0 0 .9 1.45h12.76a1 1 0 0 0 .9-1.45l-5.069-10.127A2 2 0 0 1 14 9.527V2M8.5 2h7M7 16h10" />,
+            X: <path d="M18 6 6 18M6 6 12 12" />,
+            Plus: <path d="M5 12h14M12 5v14" />,
+            PlusCircle: <g><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /><path d="M12 8v8" /></g>,
+            Edit2: <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />,
+            Target: <g><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></g>,
+            Check: <path d="M20 6 9 17l-5-5" />,
+            Lock: <g><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></g>,
+            Unlock: <g><rect width="18" height="11" x="3" y="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></g>,
+            Wand2: <path d="m21.64 3.64-1.28-1.28a1.21 1.21 0 0 0-1.72 0L2.36 18.64a1.21 1.21 0 0 0 0 1.72l1.28 1.28a1.2 1.2 0 0 0 1.72 0L21.64 5.36a1.2 1.2 0 0 0 0-1.72Z" />,
+            ChartPie: <g><path d="M21.21 15.89A10 10 0 1 1 8 2.83" /><path d="M22 12A10 10 0 0 0 12 2v10z" /></g>,
+            Download: <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />,
+            Microscope: <g><path d="M6 18h8" /><path d="M3 22h18" /><path d="M14 22a7 7 0 1 0 0-14h-1" /><path d="M9 14h2" /><path d="M9 12a2 2 0 0 1-2-2V6h6v4a2 2 0 0 1-2 2Z" /><path d="M12 6V3a1 1 0 0 0-1-1H9a1 1 0 0 0-1 1v3" /></g>,
+            RotateCcw: <g><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 12" /><path d="M3 3v9h9" /></g>,
+            ArrowUpRight: <path d="M7 7h10v10M7 17 17 7" />,
+            MoreVertical: <g><circle cx="12" cy="12" r="1" /><circle cx="12" cy="5" r="1" /><circle cx="12" cy="19" r="1" /></g>
+        };
+
+        const Icon = ({ name, size = 20, className }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {ICONS[name]}
+            </svg>
+        );
+
+        // --- 原料库 ---
+        const DEFAULT_INGREDIENTS = [
+            { id: 'raw_milk', name: '生牛乳', fat: 3.8, protein: 3.1, ts: 12.5, price: 4.5, type: 'dairy' },
+            { id: 'cream_38', name: '稀奶油 (38%)', fat: 38.0, protein: 2.2, ts: 45.0, price: 35.0, type: 'dairy' },
+            { id: 'smp', name: '脱脂奶粉 (SMP)', fat: 0.8, protein: 34.0, ts: 96.0, price: 28.0, type: 'powder' },
+            { id: 'wmp', name: '全脂奶粉 (WMP)', fat: 26.0, protein: 24.0, ts: 96.0, price: 32.0, type: 'powder' },
+            { id: 'whey_conc', name: '浓缩乳清蛋白', fat: 6.0, protein: 80.0, ts: 95.0, price: 65.0, type: 'powder' },
+            { id: 'sugar', name: '白砂糖', fat: 0.0, protein: 0.0, ts: 99.8, price: 6.5, type: 'sugar' },
+            { id: 'stabilizer', name: '复配稳定剂', fat: 0.0, protein: 0.0, ts: 95.0, price: 45.0, type: 'additive' },
+            { id: 'water', name: '工艺水', fat: 0.0, protein: 0.0, ts: 0.0, price: 0.005, type: 'water' },
+        ];
+
+        const NumInput = ({ label, value, onChange, suffix, className, step="0.1", placeholder, highlight }) => (
+            <div className={className}>
+                {label && <label className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1 block ml-1">{label}</label>}
+                <div className={`relative flex items-center rounded-xl overflow-hidden h-12 transition-all ${highlight ? 'bg-white ring-2 ring-blue-500/20 shadow-sm' : 'bg-gray-100'}`}>
+                    <input type="number" step={step} value={value} onChange={onChange} onFocus={(e) => e.target.select()} placeholder={placeholder} className="w-full bg-transparent border-none px-4 py-2 text-lg font-semibold text-gray-900 focus:outline-none placeholder-gray-300" />
+                    {suffix && <span className="absolute right-4 text-gray-400 text-xs font-bold pointer-events-none">{suffix}</span>}
+                </div>
+            </div>
+        );
+
+        const App = () => {
+            const [library, setLibrary] = useState(() => JSON.parse(localStorage.getItem('dairy_library_v1')) || DEFAULT_INGREDIENTS);
+            const [formula, setFormula] = useState(() => JSON.parse(localStorage.getItem('dairy_formula_v1')) || [{ ...DEFAULT_INGREDIENTS[0], uuid: '1', weight: 850, locked: false }, { ...DEFAULT_INGREDIENTS[5], uuid: '2', weight: 60, locked: true }]);
+            const [targets, setTargets] = useState(() => JSON.parse(localStorage.getItem('dairy_targets_v1')) || { fat: 3.5, protein: 3.0, ts: 12.0, msnf: 0 });
+            const [targetBatchSize, setTargetBatchSize] = useState(() => parseFloat(localStorage.getItem('dairy_batch_size_v1')) || 1000);
+            const [isBatchSizeLocked, setIsBatchSizeLocked] = useState(() => JSON.parse(localStorage.getItem('dairy_batch_locked_v1')) || false);
+            const [fossReadings, setFossReadings] = useState(() => JSON.parse(localStorage.getItem('dairy_foss_v1')) || { fat: 0, protein: 0, ts: 0 });
+            
+            const [showAddModal, setShowAddModal] = useState(false);
+            const [showTargetModal, setShowTargetModal] = useState(false);
+            const [showInstallHelp, setShowInstallHelp] = useState(false);
+            const [editingLibraryItem, setEditingLibraryItem] = useState(null);
+            const [expandedItemUuid, setExpandedItemUuid] = useState(null);
+            const [viewMode, setViewMode] = useState('composition'); 
+            const [isSolving, setIsSolving] = useState(false);
+            const [scrolled, setScrolled] = useState(false);
+            
+            // 环境检测
+            const isWeChat = useMemo(() => /MicroMessenger/i.test(navigator.userAgent), []);
+            const isIOS = useMemo(() => /iPhone|iPad|iPod/i.test(navigator.userAgent), []);
+            
+            // PWA 安装事件
+            const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+            useEffect(() => {
+                const handleScroll = () => setScrolled(window.scrollY > 10);
+                window.addEventListener('scroll', handleScroll);
+                
+                const handleInstallPrompt = (e) => {
+                    e.preventDefault(); 
+                    setDeferredPrompt(e);
+                };
+                window.addEventListener('beforeinstallprompt', handleInstallPrompt);
+
+                localStorage.setItem('dairy_library_v1', JSON.stringify(library));
+                localStorage.setItem('dairy_formula_v1', JSON.stringify(formula));
+                localStorage.setItem('dairy_targets_v1', JSON.stringify(targets));
+                localStorage.setItem('dairy_batch_size_v1', targetBatchSize);
+                localStorage.setItem('dairy_batch_locked_v1', JSON.stringify(isBatchSizeLocked));
+                localStorage.setItem('dairy_foss_v1', JSON.stringify(fossReadings));
+                
+                return () => {
+                    window.removeEventListener('scroll', handleScroll);
+                    window.removeEventListener('beforeinstallprompt', handleInstallPrompt);
+                };
+            }, [library, formula, targets, targetBatchSize, fossReadings, isBatchSizeLocked]);
+
+            const handleInstallClick = () => {
+                vibrate();
+                // 优先尝试自动安装
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    deferredPrompt.userChoice.then((choiceResult) => {
+                        if (choiceResult.outcome === 'accepted') setDeferredPrompt(null);
+                    });
+                } else {
+                    // 失败则显示手动指引
+                    setShowInstallHelp(true);
+                }
+            };
+
+            const calcs = useMemo(() => {
+                let tW = 0, tF = 0, tP = 0, tTS = 0, tC = 0;
+                formula.forEach(i => {
+                    const w = parseFloat(i.weight) || 0;
+                    tW += w; tF += w * i.fat/100; tP += w * i.protein/100; tTS += w * i.ts/100; tC += w * i.price;
+                });
+                const sW = tW || 1;
+                return { weight: tW, fat: tF/sW*100, pro: tP/sW*100, ts: tTS/sW*100, msnf: (tTS-tF)/sW*100, cost: tC, costPerKg: tC/sW };
+            }, [formula]);
+
+            const handleAction = (fn) => { vibrate(); fn(); }; 
+            
+            const autoCalculate = () => {
+                handleAction(() => {
+                    const unlocked = formula.filter(i => !i.locked);
+                    if (!unlocked.length) return alert("请解锁至少一种原料");
+                    setIsSolving(true);
+                    setTimeout(() => {
+                        let bestF = JSON.parse(JSON.stringify(formula));
+                        const lockedW = bestF.reduce((acc, i) => i.locked ? acc + (parseFloat(i.weight)||0) : acc, 0);
+                        const availW = targetBatchSize - lockedW;
+                        if (availW < 0) { setIsSolving(false); return alert("锁定超重"); }
+                        const idxs = bestF.map((i, x) => i.locked ? -1 : x).filter(x => x !== -1);
+                        idxs.forEach(i => bestF[i].weight = availW / idxs.length); 
+                        let minErr = Infinity;
+                        let bestW = bestF.map(i => i.weight);
+                        for(let k=0; k<3000; k++) {
+                            if(idxs.length < 2) break;
+                            const i1 = idxs[Math.floor(Math.random()*idxs.length)];
+                            const i2 = idxs[Math.floor(Math.random()*idxs.length)];
+                            if(i1 === i2) continue;
+                            const diff = (Math.random()-0.5) * availW * 0.1 * (1 - k/3000);
+                            if(bestF[i1].weight + diff < 0 || bestF[i2].weight - diff < 0) continue;
+                            bestF[i1].weight += diff; bestF[i2].weight -= diff;
+                            let cF=0, cP=0, cW=0;
+                            bestF.forEach(i => { cF+=i.weight*i.fat; cP+=i.weight*i.protein; cW+=i.weight; });
+                            const err = (targets.fat>0 ? Math.pow(cF/cW - targets.fat, 2)*2.5 : 0) + (targets.protein>0 ? Math.pow(cP/cW - targets.protein, 2) : 0);
+                            if(err < minErr) { minErr = err; bestW = bestF.map(i => i.weight); }
+                            else { bestF[i1].weight -= diff; bestF[i2].weight += diff; }
+                        }
+                        setFormula(formula.map((i, x) => ({...i, weight: parseFloat(bestW[x].toFixed(2))})));
+                        setIsSolving(false);
+                        setShowTargetModal(false);
+                    }, 600);
+                });
+            };
+
+            const normalize = () => handleAction(() => {
+                if(calcs.weight===0) return;
+                const r = targetBatchSize / calcs.weight;
+                setFormula(formula.map(i => ({...i, weight: parseFloat((i.weight*r).toFixed(2))})));
+            });
+
+            const updateFormulaItem = (uuid, field, value) => setFormula(formula.map(item => item.uuid === uuid ? { ...item, [field]: field === 'locked' ? value : (parseFloat(value) || 0) } : item));
+            const addToFormula = (ing) => { setFormula([...formula, { ...ing, uuid: Date.now().toString(), weight: 0, locked: false }]); setShowAddModal(false); };
+            const removeFromFormula = (uuid) => setFormula(formula.filter(item => item.uuid !== uuid));
+            const saveLibraryItem = (item) => { setLibrary(library.map(l => l.id === item.id ? item : l)); setEditingLibraryItem(null); };
+            const checkDiff = (item, field) => { const libItem = library.find(l => l.id === item.id); return (libItem && item[field] !== libItem[field]) ? "text-amber-600 font-bold" : "text-gray-500"; };
+
+            const getStatus = (val, target) => {
+                if(!target) return null;
+                const d = val - target;
+                const ok = Math.abs(d) <= 0.05;
+                return { 
+                    color: ok ? 'text-green-600 bg-green-50' : (Math.abs(d)<=0.2 ? 'text-orange-500 bg-orange-50' : 'text-red-600 bg-red-50'),
+                    text: ok ? 'OK' : (d>0 ? `+${d.toFixed(2)}` : d.toFixed(2))
+                };
+            };
+
+            return (
+                <div className="min-h-screen pb-32">
+                    {isWeChat && (
+                        <div className="bg-orange-50 px-4 py-2 text-xs text-orange-700 border-b border-orange-100 flex items-center justify-center text-center sticky top-0 z-50">
+                            微信内无法安装/保存，请点击右上角选择“在浏览器打开”
+                        </div>
+                    )}
+                    
+                    <header className={`sticky top-0 z-30 pt-safe-offset px-5 pb-4 border-b transition-all duration-300 ${scrolled ? 'ios-glass border-gray-200/60' : 'bg-[#F2F2F7] border-transparent'}`}>
+                        <div className="flex justify-between items-center mb-4">
+                            <div>
+                                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Dairy Lab</div>
+                                <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight flex items-center gap-2 mt-0.5">
+                                    {viewMode === 'verification' ? 'FOSS 验证' : '配方计算'}
+                                </h1>
+                            </div>
+                            <div className="flex gap-2">
+                                {viewMode !== 'verification' && (
+                                    <button 
+                                        onClick={handleInstallClick} 
+                                        className={`w-10 h-10 rounded-full bg-white shadow-sm border border-gray-100 flex items-center justify-center active-scale ${deferredPrompt ? 'text-blue-600' : 'text-gray-500'}`}
+                                    >
+                                        <Icon name="Download" size={20} />
+                                    </button>
+                                )}
+                                <button onClick={() => handleAction(normalize)} className="h-10 px-4 rounded-full bg-white shadow-sm border border-gray-100 text-sm font-bold text-blue-600 active-scale">归一化</button>
+                            </div>
+                        </div>
+
+                        {viewMode !== 'verification' && (
+                            <div className="grid grid-cols-2 gap-3">
+                                {[
+                                    { l: '脂肪 Fat', v: calcs.fat, t: targets.fat },
+                                    { l: '蛋白 Pro', v: calcs.pro, t: targets.protein },
+                                    { l: '总固 TS', v: calcs.ts, t: targets.ts },
+                                    { l: '非脂 MSNF', v: calcs.msnf, t: targets.msnf }
+                                ].map((d, i) => {
+                                    const st = getStatus(d.v, d.t);
+                                    const isOk = st && st.text === 'OK';
+                                    const stColor = st ? st.color : '';
+                                    const stText = st ? st.text : '';
+                                    return (
+                                        <div key={i} className="bg-white p-3.5 rounded-2xl shadow-sm border border-gray-50 relative overflow-hidden">
+                                            <div className="flex justify-between items-start">
+                                                <span className="text-[10px] font-bold text-gray-400 uppercase">{d.l}</span>
+                                                {d.t > 0 && <div className={`w-2 h-2 rounded-full ${isOk ? 'bg-green-500' : 'bg-gray-200'}`}></div>}
+                                            </div>
+                                            <div className="mt-1 flex items-baseline gap-1">
+                                                <span className="text-2xl font-bold text-gray-900 tracking-tighter">{d.v.toFixed(2)}</span>
+                                                <span className="text-xs font-medium text-gray-400">%</span>
+                                            </div>
+                                            {d.t > 0 && (
+                                                <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-50">
+                                                    <span className="text-[10px] text-gray-400 font-mono">目标 {d.t}</span>
+                                                    <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${stColor}`}>{stText}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </header>
+
+                    <div className="px-5 pt-4 pb-20 space-y-4">
+                        {viewMode === 'verification' ? (
+                            <div className="space-y-6 animate-slide-up">
+                                <div className="bg-white rounded-3xl p-5 shadow-sm">
+                                    <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2"><Icon name="Microscope" size={18} className="text-purple-600"/> FOSS 实测录入</h3>
+                                    <div className="space-y-3">
+                                        {['fat', 'protein', 'ts'].map(k => (
+                                            <div key={k} className="flex items-center gap-3">
+                                                <span className="w-16 text-sm font-bold text-gray-500 uppercase">{k}</span>
+                                                <NumInput value={fossReadings[k]} onChange={e => setFossReadings({...fossReadings, [k]: parseFloat(e.target.value)})} placeholder="0.00" className="flex-1" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="bg-white rounded-3xl p-5 shadow-sm">
+                                    <h3 className="font-bold text-gray-900 mb-2">偏差分析</h3>
+                                    {['fat', 'protein', 'ts'].map((k, i) => {
+                                        const theory = k==='fat'?calcs.fat : k==='protein'?calcs.pro : calcs.ts;
+                                        const actual = fossReadings[k];
+                                        const diff = actual - theory;
+                                        return (
+                                            <div key={k} className="flex justify-between items-center py-3 border-b border-gray-50 last:border-0">
+                                                <span className="text-sm font-bold text-gray-500 uppercase w-20">{k}</span>
+                                                <div className="text-right"><div className="text-[10px] text-gray-400">理论</div><div className="font-mono font-medium">{theory.toFixed(2)}</div></div>
+                                                <div className="text-right"><div className="text-[10px] text-gray-400">实测</div><div className="font-mono font-bold text-gray-900">{actual>0?actual.toFixed(2):'-'}</div></div>
+                                                <div className={`text-right w-16 font-bold text-sm ${Math.abs(diff)<=0.05?'text-green-500':(Math.abs(diff)<=0.2?'text-orange-500':'text-red-500')}`}>
+                                                    {actual>0 ? (diff>0?`+${diff.toFixed(2)}`:diff.toFixed(2)) : '--'}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        ) : (
+                            <Fragment>
+                                <div className="flex justify-between items-center px-1">
+                                    <div className="text-xs font-bold text-gray-400 uppercase">配方列表 ({formula.length})</div>
+                                    <div className="text-sm font-bold text-gray-900">¥{calcs.costPerKg.toFixed(2)} <span className="text-xs font-normal text-gray-400">/kg</span></div>
+                                </div>
+                                <div className="space-y-3">
+                                    {formula.map(item => (
+                                        <div key={item.uuid} className="bg-white rounded-2xl p-4 shadow-sm active:scale-[0.99] transition-transform" onClick={() => handleAction(() => setExpandedItemUuid(expandedItemUuid===item.uuid?null:item.uuid))}>
+                                            <div className="flex justify-between items-center mb-3">
+                                                <div className="font-bold text-lg text-gray-900 flex items-center gap-2">
+                                                    {item.locked && <Icon name="Lock" size={14} className="text-gray-400"/>}
+                                                    {item.name}
+                                                </div>
+                                                <div className="flex gap-3">
+                                                    <button onClick={(e) => { e.stopPropagation(); handleAction(() => { const n = [...formula]; n.find(i=>i.uuid===item.uuid).locked = !item.locked; setFormula(n); }); }} className="text-gray-300"><Icon name={item.locked?"Lock":"Unlock"} size={18}/></button>
+                                                    <button onClick={(e) => { e.stopPropagation(); handleAction(() => setFormula(formula.filter(i=>i.uuid!==item.uuid))); }} className="text-gray-300 hover:text-red-500"><Icon name="X" size={18}/></button>
+                                                </div>
+                                            </div>
+                                            <div className="flex gap-3">
+                                                <div className="flex-1" onClick={e => e.stopPropagation()}>
+                                                    <div className={`flex items-center h-12 rounded-xl px-4 ${item.locked ? 'bg-gray-50' : 'bg-blue-50/50'}`}>
+                                                        <input type="number" value={item.weight} disabled={item.locked} onChange={e => { const n=[...formula]; n.find(i=>i.uuid===item.uuid).weight=e.target.value; setFormula(n); }} className="bg-transparent w-full text-xl font-bold text-gray-900 outline-none" placeholder="0" />
+                                                        <span className="text-xs font-bold text-gray-400 ml-2">g</span>
+                                                    </div>
+                                                </div>
+                                                {viewMode === 'composition' ? (
+                                                    <div className="flex flex-col justify-center items-end w-16">
+                                                        <span className="text-[10px] font-bold text-gray-300 uppercase">占比</span>
+                                                        <span className="text-lg font-bold text-blue-600">{calcs.weight>0 ? (item.weight/calcs.weight*100).toFixed(1):0}%</span>
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-24" onClick={e=>e.stopPropagation()}>
+                                                        <div className="flex items-center h-12 bg-gray-50 rounded-xl px-3">
+                                                            <span className="text-gray-400 text-xs mr-1">¥</span>
+                                                            <input type="number" value={item.price} onChange={e => { const n=[...formula]; n.find(i=>i.uuid===item.uuid).price=e.target.value; setFormula(n); }} className="bg-transparent w-full text-right font-bold text-gray-700 outline-none" />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                            {expandedItemUuid === item.uuid && (
+                                                <div className="mt-4 pt-4 border-t border-gray-50 grid grid-cols-3 gap-3 animate-slide-up" onClick={e=>e.stopPropagation()}>
+                                                    <NumInput label="FAT %" value={item.fat} onChange={e => { const n=[...formula]; n.find(i=>i.uuid===item.uuid).fat=e.target.value; setFormula(n); }} />
+                                                    <NumInput label="PRO %" value={item.protein} onChange={e => { const n=[...formula]; n.find(i=>i.uuid===item.uuid).protein=e.target.value; setFormula(n); }} />
+                                                    <NumInput label="TS %" value={item.ts} onChange={e => { const n=[...formula]; n.find(i=>i.uuid===item.uuid).ts=e.target.value; setFormula(n); }} />
+                                                </div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                                <button onClick={() => handleAction(() => setShowAddModal(true))} className="w-full py-4 mt-4 rounded-2xl border-2 border-dashed border-gray-200 text-gray-400 font-bold flex items-center justify-center gap-2 active-scale bg-white/50"><Icon name="Plus" /> 添加原料</button>
+                            </Fragment>
+                        )}
+                    </div>
+
+                    <div className="fixed bottom-6 left-4 right-4 z-40 pb-safe-offset">
+                        <div className="ios-glass rounded-[24px] p-2 shadow-[0_8px_32px_rgba(0,0,0,0.12)] border border-white/50 flex items-center gap-2">
+                            <div className="flex bg-gray-100/80 p-1 rounded-[18px] flex-1 relative">
+                                <div className={`absolute top-1 bottom-1 w-[32%] bg-white rounded-[14px] shadow-sm transition-all duration-300 ease-out ${viewMode === 'cost' ? 'left-[34%]' : (viewMode === 'verification' ? 'left-[67%]' : 'left-1')}`}></div>
+                                <button onClick={() => handleAction(() => setViewMode('composition'))} className={`flex-1 h-10 rounded-[14px] text-xs font-bold z-10 transition-colors ${viewMode==='composition'?'text-gray-900':'text-gray-400'}`}>配方</button>
+                                <button onClick={() => handleAction(() => setViewMode('cost'))} className={`flex-1 h-10 rounded-[14px] text-xs font-bold z-10 transition-colors ${viewMode==='cost'?'text-gray-900':'text-gray-400'}`}>成本</button>
+                                <button onClick={() => handleAction(() => setViewMode('verification'))} className={`flex-1 h-10 rounded-[14px] text-xs font-bold z-10 transition-colors ${viewMode==='verification'?'text-gray-900':'text-gray-400'}`}>验证</button>
+                            </div>
+                            {viewMode !== 'verification' && (
+                                <button onClick={() => handleAction(() => setShowTargetModal(true))} className="h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-blue-500/30 active-scale flex-shrink-0"><Icon name="Wand2" size={20} /></button>
+                            )}
+                        </div>
+                        
+                        {viewMode !== 'verification' && (
+                            <div className="absolute bottom-full left-4 right-4 mb-3 bg-gray-900/90 backdrop-blur text-white rounded-2xl p-3 flex justify-between items-center shadow-xl animate-slide-up">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-gray-400 ml-2">目标投料量</span>
+                                    <button onClick={() => handleAction(() => setIsBatchSizeLocked(!isBatchSizeLocked))} className={`p-1.5 rounded-full transition-colors ${isBatchSizeLocked ? 'text-gray-400 bg-white/10' : 'text-gray-500 hover:text-white'}`}><Icon name={isBatchSizeLocked?"Lock":"Unlock"} size={14}/></button>
+                                </div>
+                                <div className={`flex items-center gap-2 rounded-lg px-3 py-1 transition-colors ${isBatchSizeLocked ? 'bg-transparent' : 'bg-white/10'}`}>
+                                    <input type="number" value={targetBatchSize} disabled={isBatchSizeLocked} onChange={e => setTargetBatchSize(e.target.value)} className={`bg-transparent w-20 text-right font-bold outline-none text-lg transition-colors ${isBatchSizeLocked ? 'text-gray-500' : 'text-white'}`} />
+                                    <span className={`text-xs font-bold mr-1 ${isBatchSizeLocked ? 'text-gray-600' : 'text-gray-400'}`}>g</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {showTargetModal && (
+                        <div className="fixed inset-0 z-50 flex items-end justify-center">
+                            <div className="absolute inset-0 bg-black/20 backdrop-blur-sm transition-opacity" onClick={() => setShowTargetModal(false)}></div>
+                            <div className="bg-white w-full max-w-md rounded-t-[32px] p-6 pb-safe-offset animate-slide-up shadow-2xl relative z-10">
+                                <div className="w-12 h-1.5 bg-gray-200 rounded-full mx-auto mb-6"></div>
+                                <div className="flex justify-between items-center mb-6"><h3 className="text-2xl font-extrabold text-gray-900">目标设定</h3><button onClick={() => { vibrate(); setTargets({fat:0,protein:0,ts:0,msnf:0}); }} className="text-sm font-bold text-gray-400">重置</button></div>
+                                <div className="grid grid-cols-2 gap-4 mb-6">
+                                    <NumInput label="FAT %" value={targets.fat} onChange={e => setTargets({...targets, fat: parseFloat(e.target.value)})} highlight />
+                                    <NumInput label="PRO %" value={targets.protein} onChange={e => setTargets({...targets, protein: parseFloat(e.target.value)})} highlight />
+                                    <NumInput label="TS %" value={targets.ts} onChange={e => setTargets({...targets, ts: parseFloat(e.target.value)})} highlight />
+                                    <NumInput label="MSNF" value={targets.msnf} onChange={e => setTargets({...targets, msnf: parseFloat(e.target.value)})} highlight />
+                                </div>
+                                <button onClick={autoCalculate} disabled={isSolving} className={`w-full h-14 rounded-2xl font-bold text-lg text-white shadow-xl active-scale flex items-center justify-center gap-2 ${isSolving ? 'bg-gray-300' : 'bg-blue-600 shadow-blue-500/30'}`}>{isSolving ? '计算中...' : <Fragment><Icon name="Wand2" /> 自动平衡配方</Fragment>}</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {showAddModal && (
+                        <div className="fixed inset-0 z-50 flex items-end justify-center">
+                            <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" onClick={() => setShowAddModal(false)}></div>
+                            <div className="bg-[#F2F2F7] w-full max-w-md h-[85vh] rounded-t-[32px] flex flex-col animate-slide-up shadow-2xl relative z-10 pb-safe-offset overflow-hidden">
+                                <div className="bg-white px-6 py-4 border-b border-gray-100 flex justify-between items-center sticky top-0 z-20"><h3 className="font-bold text-xl">选择原料</h3><button onClick={() => setShowAddModal(false)} className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-gray-500"><Icon name="X" size={18}/></button></div>
+                                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                                    {library.map(ing => (
+                                        <div key={ing.id} className="bg-white p-4 rounded-2xl flex items-center justify-between active:scale-[0.98] transition-transform" onClick={() => handleAction(() => { addToFormula(ing); setShowAddModal(false); })}>
+                                            <div><div className="font-bold text-gray-900 text-lg">{ing.name}</div><div className="text-xs font-bold text-gray-400 mt-1 space-x-2"><span className="bg-gray-50 px-1.5 py-0.5 rounded">F:{ing.fat}</span><span className="bg-gray-50 px-1.5 py-0.5 rounded">P:{ing.protein}</span></div></div>
+                                            <Icon name="PlusCircle" size={28} className="text-blue-600 fill-blue-50" />
+                                        </div>
+                                    ))}
+                                    <div className="h-20"></div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
+                    {/* --- 安装帮助模态框 (更新：图文指引) --- */}
+                    {showInstallHelp && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center p-6" onClick={() => setShowInstallHelp(false)}>
+                            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm">
+                                {/* 指向性箭头 - 动态指向右上角 */}
+                                <div className="absolute top-2 right-4 text-white animate-point flex flex-col items-end">
+                                    <Icon name="ArrowUpRight" size={48} />
+                                    <span className="font-bold text-lg mt-2">点击右上角菜单</span>
+                                </div>
+                            </div>
+                            
+                            <div className="bg-white rounded-3xl p-6 w-full max-w-sm animate-scale relative z-10 shadow-2xl" onClick={e => e.stopPropagation()}>
+                                <div className="flex flex-col items-center text-center">
+                                    <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 text-blue-600"><Icon name="Download" size={32}/></div>
+                                    <h3 className="text-xl font-extrabold text-gray-900 mb-4">如何安装到手机？</h3>
+                                    
+                                    <div className="w-full text-left bg-gray-50 rounded-xl p-4 mb-6 space-y-3 text-sm text-gray-600">
+                                        <div className="flex items-start gap-3">
+                                            <div className="bg-gray-200 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-gray-700 flex-shrink-0">1</div>
+                                            <p>点击浏览器右上角的 <span className="font-bold text-gray-900"><Icon name="MoreVertical" className="inline" size={14}/></span> 或 <span className="font-bold text-gray-900">分享</span> 按钮</p>
+                                        </div>
+                                        <div className="flex items-start gap-3">
+                                            <div className="bg-gray-200 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-gray-700 flex-shrink-0">2</div>
+                                            <p>在菜单中找到并点击 <span className="font-bold text-blue-600">添加到主屏幕</span> 或 <span className="font-bold text-blue-600">安装应用</span></p>
+                                        </div>
+                                        <div className="flex items-start gap-3">
+                                            <div className="bg-gray-200 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-gray-700 flex-shrink-0">3</div>
+                                            <p>确认名称，即可在桌面生成图标，离线使用！</p>
+                                        </div>
+                                    </div>
+                                    
+                                    <button onClick={() => setShowInstallHelp(false)} className="w-full h-12 bg-gray-900 text-white rounded-xl font-bold active-scale">我学会了</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
